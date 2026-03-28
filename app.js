@@ -6,7 +6,15 @@
 
 // ─── ESTADO GLOBAL ────────────────────────────────────────────
 const cart = {};
-let pendingWhatsappUrl = null; // URL montada, aguarda confirmação no modal
+let pendingWhatsappUrl = null;
+
+// Número do pedido sequencial, salvo no navegador
+function getNextOrderNumber() {
+  const current = parseInt(localStorage.getItem("zp_order_number") || "0");
+  const next = current + 1;
+  localStorage.setItem("zp_order_number", next);
+  return String(next).padStart(4, "0"); // 0001, 0042, 0100...
+}
 
 // ─── INICIALIZAÇÃO ────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
@@ -271,7 +279,7 @@ function validate() {
 
 // ─── MONTAR MENSAGEM ──────────────────────────────────────────
 
-function buildMessage() {
+function buildMessage(orderNumber) {
   const cartItems       = Object.values(cart);
   const customerName    = document.getElementById("customer-name").value.trim();
   const customerPhone   = document.getElementById("customer-phone").value.trim();
@@ -286,6 +294,7 @@ function buildMessage() {
     .join("\n");
 
   let msg = CONFIG.order.greeting + "\n\n";
+  msg += `🧾 *Pedido:* ${orderNumber}\n`;
   if (customerName)    msg += `👤 *Nome:* ${customerName}\n`;
   if (customerPhone)   msg += `📱 *Telefone:* ${customerPhone}\n`;
   if (customerAddress) msg += `📍 *Endereço:* ${customerAddress}\n`;
@@ -335,10 +344,13 @@ function openModal() {
     }
   }
 
+  // Pré-visualiza o número (não incrementa ainda — isso só acontece no buildMessage)
+  const previewNumber = String(parseInt(localStorage.getItem("zp_order_number") || "0") + 1).padStart(4, "0");
+
   document.getElementById("modal-body").innerHTML = `
     <!-- Itens -->
     <div class="preview-section">
-      <div class="preview-section-title">🛒 Itens</div>
+      <div class="preview-section-title">🧾 Pedido ${previewNumber}</div>
       ${cartItems.map(({ item, quantity }) => `
         <div class="preview-row">
           <span>${item.name} <em class="qty-tag">×${quantity}</em></span>
@@ -372,7 +384,9 @@ function openModal() {
   `;
 
   // Monta a URL antes para usar no confirm
-  const msg = buildMessage();
+  // Número gerado aqui e passado para buildMessage (não duplica)
+  const orderNumber = getNextOrderNumber();
+  const msg = buildMessage(orderNumber);
   pendingWhatsappUrl = `https://wa.me/${CONFIG.store.whatsappNumber}?text=${encodeURIComponent(msg)}`;
 
   document.getElementById("modal-overlay").classList.add("open");
@@ -394,6 +408,30 @@ function confirmOrder() {
   closeCart();
   setTimeout(() => window.open(pendingWhatsappUrl, "_blank"), 320);
   pendingWhatsappUrl = null;
+
+  // ── Zera tudo após confirmar ──────────────────────────────
+  // Limpa carrinho
+  Object.keys(cart).forEach(id => {
+    updateCardUI(id, 0);
+    delete cart[id];
+  });
+
+  // Limpa formulário
+  document.getElementById("customer-name").value    = "";
+  document.getElementById("customer-phone").value   = "";
+  document.getElementById("customer-change").value  = "";
+  document.getElementById("change-hint").textContent = "";
+  document.getElementById("change-wrap").style.display = "none";
+  document.getElementById("cep-input").value        = "";
+  document.getElementById("cep-status").textContent = "";
+  document.getElementById("cep-result").style.display = "none";
+  document.getElementById("customer-address").value = "";
+  document.querySelectorAll(".pay-btn").forEach(b => b.classList.remove("selected"));
+  clearAllErrors();
+  checkPaymentUnlock();
+
+  // Atualiza painel
+  updateCartPanel();
 }
 
 // ─── FINALIZAR (dispara validação → modal) ────────────────────
@@ -477,7 +515,10 @@ function setupEventListeners() {
   document.getElementById("btn-cep-search").addEventListener("click", buscarCEP);
 
   // ── Pagamento ─────────────────────────────────────────────
-  document.querySelectorAll(".pay-btn").forEach(btn => {
+  document.querySelectorAll(".pay-btn").forEach((btn, idx, btns) => {
+    // Torna focalizável por Tab
+    btn.setAttribute("tabindex", "0");
+
     btn.addEventListener("click", () => {
       const alreadySelected = btn.classList.contains("selected");
       document.querySelectorAll(".pay-btn").forEach(b => b.classList.remove("selected"));
@@ -487,15 +528,40 @@ function setupEventListeners() {
       const changeWrap = document.getElementById("change-wrap");
       changeWrap.style.display = isDinheiro ? "flex" : "none";
 
-      if (!isDinheiro) {
+      if (isDinheiro) {
+        // Enter em Dinheiro → foca campo de valor
+        setTimeout(() => document.getElementById("customer-change").focus(), 50);
+      } else {
         document.getElementById("customer-change").value = "";
         document.getElementById("change-hint").textContent = "";
         clearFieldError(document.getElementById("change-wrap"));
       }
 
-      // Limpa erro de pagamento ao selecionar
       const wrap = btn.closest(".field-wrap");
       if (wrap?.classList.contains("has-error")) clearFieldError(wrap);
+    });
+
+    // Navegação por setas e Enter/Espaço
+    btn.addEventListener("keydown", (e) => {
+      const total = btns.length;
+      const cols  = 2; // grid 2x2
+
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        btns[(idx + 1) % total].focus();
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        btns[(idx - 1 + total) % total].focus();
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        btns[(idx + cols) % total].focus();
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        btns[(idx - cols + total) % total].focus();
+      } else if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        btn.click();
+      }
     });
   });
 
