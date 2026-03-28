@@ -28,11 +28,11 @@ const CONFIG = {
   // DADOS DA LOJA
   // ----------------------------------------------------------
   store: {
-    name:            "Pizzaria Bella Napoli",      // Nome que aparece no topo
+    name:            "Pizzaria MC",      // Nome que aparece no topo
     tagline:         "A melhor pizza da cidade",   // Subtítulo (opcional)
     logo:            "🍕",                         // Emoji ou URL de imagem (ex: "logo.png")
-    whatsappNumber:  "5511999999999",              // ⚠️ Formato: 55 + DDD + número (sem espaços)
-    responseTime:    "30 minutos",                 // Tempo médio de resposta (aparece na tela de sucesso)
+    whatsappNumber:  "5511987936283",              // ⚠️ Formato: 55 + DDD + número (sem espaços)
+    responseTime:    "10 minutos",                 // Tempo médio de resposta (aparece na tela de sucesso)
   },
 
   // ----------------------------------------------------------
