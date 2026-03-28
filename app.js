@@ -384,53 +384,58 @@ function openModal() {
   `;
 
   // Monta a URL antes para usar no confirm
-  // Número gerado aqui e passado para buildMessage (não duplica)
-  const orderNumber = getNextOrderNumber();
-  const msg = buildMessage(orderNumber);
-  pendingWhatsappUrl = `https://wa.me/${CONFIG.store.whatsappNumber}?text=${encodeURIComponent(msg)}`;
+  // Número será gerado apenas ao confirmar — aqui só pré-visualizamos
+  pendingWhatsappUrl = "PENDING"; // marcador, URL real gerada no confirmOrder
 
   document.getElementById("modal-overlay").classList.add("open");
   document.getElementById("order-modal").classList.add("open");
   document.getElementById("modal-overlay").setAttribute("aria-hidden", "false");
   document.body.style.overflow = "hidden";
+
+  // Foca o botão confirmar para Enter funcionar direto
+  setTimeout(() => document.getElementById("modal-confirm").focus(), 100);
 }
 
 function closeModal() {
   document.getElementById("modal-overlay").classList.remove("open");
   document.getElementById("order-modal").classList.remove("open");
   document.getElementById("modal-overlay").setAttribute("aria-hidden", "true");
-  // NÃO remove overflow aqui — o carrinho pode ainda estar aberto
 }
 
 function confirmOrder() {
-  if (!pendingWhatsappUrl) return;
   closeModal();
   closeCart();
-  setTimeout(() => window.open(pendingWhatsappUrl, "_blank"), 320);
-  pendingWhatsappUrl = null;
 
-  // ── Zera tudo após confirmar ──────────────────────────────
-  // Limpa carrinho
-  Object.keys(cart).forEach(id => {
-    updateCardUI(id, 0);
-    delete cart[id];
-  });
+  // Captura dados antes de zerar
+  const orderNumber   = getNextOrderNumber();
+  const customerName  = document.getElementById("customer-name").value.trim();
+  const customerPhone = document.getElementById("customer-phone").value.trim();
+  const customerAddr  = buildAddressString();
+  const cartItems     = Object.values(cart);
+  const total         = cartItems.reduce((s, { item, quantity }) => s + item.price * quantity, 0);
 
-  // Limpa formulário
-  document.getElementById("customer-name").value    = "";
-  document.getElementById("customer-phone").value   = "";
-  document.getElementById("customer-change").value  = "";
+  // Monta e envia WhatsApp
+  const msg = buildMessage(orderNumber);
+  const whatsappUrl = `https://wa.me/${CONFIG.store.whatsappNumber}?text=${encodeURIComponent(msg)}`;
+  setTimeout(() => { window.location.href = whatsappUrl; }, 320);
+
+  // Mostra tela de sucesso
+  showSuccessScreen({ orderNumber, customerName, customerPhone, customerAddr, total });
+
+  // Zera carrinho e formulário
+  Object.keys(cart).forEach(id => { updateCardUI(id, 0); delete cart[id]; });
+  document.getElementById("customer-name").value     = "";
+  document.getElementById("customer-phone").value    = "";
+  document.getElementById("customer-change").value   = "";
   document.getElementById("change-hint").textContent = "";
   document.getElementById("change-wrap").style.display = "none";
-  document.getElementById("cep-input").value        = "";
-  document.getElementById("cep-status").textContent = "";
+  document.getElementById("cep-input").value         = "";
+  document.getElementById("cep-status").textContent  = "";
   document.getElementById("cep-result").style.display = "none";
-  document.getElementById("customer-address").value = "";
+  document.getElementById("customer-address").value  = "";
   document.querySelectorAll(".pay-btn").forEach(b => b.classList.remove("selected"));
   clearAllErrors();
   checkPaymentUnlock();
-
-  // Atualiza painel
   updateCartPanel();
 }
 
@@ -449,6 +454,7 @@ function setupEventListeners() {
   document.getElementById("cart-close").addEventListener("click", closeCart);
   document.getElementById("cart-overlay").addEventListener("click", closeCart);
   document.getElementById("btn-finalizar").addEventListener("click", finalizarPedido);
+  document.getElementById("btn-new-order").addEventListener("click", hideSuccessScreen);
 
   // Modal
   document.getElementById("modal-close").addEventListener("click", closeModal);
@@ -652,6 +658,61 @@ function buildAddressString() {
   const city     = document.getElementById("address-city-state").value.trim();
   if (!street && !number) return "";
   return [street, number, comp, neigh, city].filter(Boolean).join(", ");
+}
+
+// ─── TELA DE SUCESSO ──────────────────────────────────────────
+
+function showSuccessScreen({ orderNumber, customerName, customerPhone, customerAddr, total }) {
+  const screen = document.getElementById("success-screen");
+
+  // Preenche dados
+  document.getElementById("success-order-number").textContent = orderNumber;
+  document.getElementById("success-total").textContent = formatCurrency(total);
+
+  const nameRow = document.getElementById("success-name-row");
+  if (customerName) {
+    document.getElementById("success-name").textContent = customerName;
+    nameRow.style.display = "flex";
+  } else {
+    nameRow.style.display = "none";
+  }
+
+  const phoneRow = document.getElementById("success-phone-row");
+  if (customerPhone) {
+    document.getElementById("success-phone").textContent = customerPhone;
+    phoneRow.style.display = "flex";
+  } else {
+    phoneRow.style.display = "none";
+  }
+
+  const addrRow = document.getElementById("success-address-row");
+  if (customerAddr) {
+    document.getElementById("success-address").textContent = customerAddr;
+    addrRow.style.display = "flex";
+  } else {
+    addrRow.style.display = "none";
+  }
+
+  // Tempo de resposta do config
+  const timeEl = document.getElementById("success-time");
+  if (CONFIG.store.responseTime) {
+    timeEl.innerHTML = `⏱️ Tempo médio de resposta: <strong>${CONFIG.store.responseTime}</strong>`;
+    timeEl.style.display = "block";
+  } else {
+    timeEl.style.display = "none";
+  }
+
+  // Exibe a tela
+  screen.classList.add("open");
+  screen.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+}
+
+function hideSuccessScreen() {
+  const screen = document.getElementById("success-screen");
+  screen.classList.remove("open");
+  screen.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
 }
 
 // ─── UTILITÁRIOS ─────────────────────────────────────────────
