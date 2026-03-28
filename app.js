@@ -732,7 +732,7 @@ function showToast(msg) {
   setTimeout(() => toast.classList.remove("show"), 2500);
 }
 async function loadFromGoogleSheets() {
-  const URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRHE6jGt51B66dQOxlWc7q_HqVu3fPXSAAEGanoF44KSGNg-eehnEr4gg-Wa1ixjMMOjIdSPaF7fC-d/pub?output=csv";
+  const URL = const URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRHE6jGt51B66dQOxlWc7q_HqVu3fPXSAAEGanoF44KSGNg-eehnEr4gg-Wa1ixjMMOjIdSPaF7fC-d/pub?output=csv";
 
   const response = await fetch(URL);
   const text = await response.text();
