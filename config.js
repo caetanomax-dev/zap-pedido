@@ -32,6 +32,7 @@ const CONFIG = {
     tagline:         "A melhor pizza da cidade",   // Subtítulo (opcional)
     logo:            "🍕",                         // Emoji ou URL de imagem (ex: "logo.png")
     whatsappNumber:  "5511999999999",              // ⚠️ Formato: 55 + DDD + número (sem espaços)
+    responseTime:    "30 minutos",                 // Tempo médio de resposta (aparece na tela de sucesso)
   },
 
   // ----------------------------------------------------------
