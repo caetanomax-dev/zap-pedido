@@ -229,6 +229,55 @@
     </div>
   </div>
 
+  <!-- ═══════════════════════════════════════════════════════
+       TELA DE SUCESSO
+  ══════════════════════════════════════════════════════════ -->
+  <div class="success-screen" id="success-screen" aria-hidden="true">
+    <div class="success-inner">
+
+      <div class="success-anim">
+        <div class="success-circle">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+      </div>
+
+      <h2 class="success-title">Pedido Enviado!</h2>
+      <p class="success-subtitle">Sua mensagem foi enviada pelo WhatsApp.<br>Aguarde a confirmação do estabelecimento.</p>
+
+      <div class="success-card">
+        <div class="success-row">
+          <span>Pedido</span>
+          <strong id="success-order-number">0001</strong>
+        </div>
+        <div class="success-row" id="success-name-row" style="display:none">
+          <span>Nome</span>
+          <strong id="success-name"></strong>
+        </div>
+        <div class="success-row" id="success-phone-row" style="display:none">
+          <span>Telefone</span>
+          <strong id="success-phone"></strong>
+        </div>
+        <div class="success-row" id="success-address-row" style="display:none">
+          <span>Endereço</span>
+          <strong id="success-address"></strong>
+        </div>
+        <div class="success-row success-row--total">
+          <span>Total</span>
+          <strong id="success-total"></strong>
+        </div>
+      </div>
+
+      <div class="success-time" id="success-time"></div>
+
+      <button class="btn-new-order" id="btn-new-order">
+        🛒 Fazer novo pedido
+      </button>
+
+    </div>
+  </div>
+
   <div class="toast" id="toast" role="alert" aria-live="assertive"></div>
 
   <script src="config.js"></script>
