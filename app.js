@@ -17,12 +17,13 @@ function getNextOrderNumber() {
 }
 
 // ─── INICIALIZAÇÃO ────────────────────────────────────────────
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener("DOMContentLoaded", () => {
+  // Carrega cardápio do localStorage se cliente já editou pelo painel
+  const savedMenu = localStorage.getItem("zp_menu_data");
+  if (savedMenu) {
+    try { CONFIG.menu = JSON.parse(savedMenu); } catch(e) {}
+  }
   applyConfig();
-
-  // 👇 carrega o cardápio da planilha
-  CONFIG.menu = await loadFromGoogleSheets();
-
   renderCategories();
   renderProducts();
   setupEventListeners();
@@ -730,66 +731,4 @@ function showToast(msg) {
   toast.textContent = msg;
   toast.classList.add("show");
   setTimeout(() => toast.classList.remove("show"), 2500);
-}
-async function loadFromGoogleSheets() {
-  const URL = const URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRHE6jGt51B66dQOxlWc7q_HqVu3fPXSAAEGanoF44KSGNg-eehnEr4gg-Wa1ixjMMOjIdSPaF7fC-d/pub?output=csv";
-
-  const response = await fetch(URL);
-  const text = await response.text();
-
-  const linhas = text.split("\n").slice(1);
-  const categorias = {};
-
-  linhas.forEach(linha => {
-    if (!linha.trim()) return;
-
-    const colunas = parseCSVLine(linha);
-
-    const id = Number(colunas[0]);
-    const categoria = colunas[1];
-    const name = colunas[2];
-    const description = colunas[3];
-    const price = parseFloat(colunas[4]);
-    const active = colunas[5] === "TRUE";
-    const stock = colunas[6] === "TRUE";
-
-    if (!categorias[categoria]) {
-      categorias[categoria] = {
-        category: categoria,
-        items: []
-      };
-    }
-
-    categorias[categoria].items.push({
-      id,
-      name,
-      description,
-      price,
-      active,
-      stock
-    });
-  });
-
-  return Object.values(categorias);
-}
-function parseCSVLine(line) {
-  const result = [];
-  let current = "";
-  let insideQuotes = false;
-
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-
-    if (char === '"') {
-      insideQuotes = !insideQuotes;
-    } else if (char === "," && !insideQuotes) {
-      result.push(current);
-      current = "";
-    } else {
-      current += char;
-    }
-  }
-
-  result.push(current);
-  return result;
 }
