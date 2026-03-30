@@ -697,6 +697,9 @@ body {
       <button class="nav-item" data-page="categories">
         <span class="nav-icon">📂</span> Categorias
       </button>
+      <button class="nav-item" data-page="delivery">
+        <span class="nav-icon">🛵</span> Taxas de Entrega
+      </button>
     </div>
 
     <div class="sidebar-footer">
@@ -762,6 +765,31 @@ body {
         <button class="btn-primary" id="btn-add-cat">+ Nova categoria</button>
       </div>
       <div class="cat-list" id="categories-list"></div>
+    </div>
+
+    <!-- ── TAXAS DE ENTREGA ── -->
+    <div class="page" id="page-delivery">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Taxas de Entrega por Região</div>
+          <div class="section-count" id="delivery-count"></div>
+        </div>
+        <button class="btn-primary" id="btn-add-zone">+ Nova região</button>
+      </div>
+
+      <div class="cat-item" style="margin-bottom:16px">
+        <div class="cat-emoji">🛵</div>
+        <div class="cat-info">
+          <div class="cat-name">Cobrança de taxa ativa</div>
+          <div class="cat-count" id="delivery-toggle-desc">Ative para cobrar entrega por região</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="delivery-enabled-toggle" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="cat-list" id="delivery-zones-list"></div>
     </div>
 
   </div><!-- /content -->
@@ -874,6 +902,48 @@ body {
   </div>
 </div>
 
+<!-- ═══════════════ MODAL — ZONA DE ENTREGA ════════════════ -->
+<div class="modal-overlay" id="zone-modal-overlay">
+  <div class="modal" id="zone-modal">
+    <div class="modal-header">
+      <div class="modal-title" id="zone-modal-title">Nova Região</div>
+      <button class="modal-close" id="zone-modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-zone-idx" value="" />
+
+      <div class="form-field">
+        <label>Nome do bairro / região *</label>
+        <input type="text" id="edit-zone-name" placeholder="Ex: Centro, Vila Mariana, Zona Sul..." />
+      </div>
+
+      <div class="form-field">
+        <label>Taxa de entrega *</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--ink-2)">
+            <input type="radio" name="fee-type" id="fee-type-value" value="value" checked /> Valor fixo
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--ink-2)">
+            <input type="radio" name="fee-type" id="fee-type-free" value="free" /> Grátis
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--ink-2)">
+            <input type="radio" name="fee-type" id="fee-type-none" value="none" /> Não entregamos
+          </label>
+        </div>
+        <div class="price-input-wrap" id="zone-fee-wrap" style="margin-top:8px">
+          <span class="price-prefix">R$</span>
+          <input type="number" id="edit-zone-fee" placeholder="0,00" min="0" step="0.50" />
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" id="zone-modal-cancel">Cancelar</button>
+      <button class="btn-save" id="zone-modal-save">Salvar região</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="admin-toast"></div>
 
 <script src="config.js"></script>
@@ -940,10 +1010,25 @@ function loadData() {
   if (saved) {
     menuData = JSON.parse(saved);
   } else {
-    // Primeira vez: usa dados do config.js
     menuData = JSON.parse(JSON.stringify(CONFIG.menu));
     saveData();
   }
+
+  // Carrega taxas de entrega
+  const savedDelivery = localStorage.getItem(DELIVERY_KEY);
+  if (!savedDelivery && CONFIG.delivery) {
+    // Primeira vez: usa dados do config.js
+    localStorage.setItem(DELIVERY_KEY, JSON.stringify(CONFIG.delivery));
+  }
+}
+
+function loadDeliveryData() {
+  const saved = localStorage.getItem(DELIVERY_KEY);
+  return saved ? JSON.parse(saved) : (CONFIG.delivery || { enabled: false, defaultFee: null, zones: [] });
+}
+
+function saveDeliveryData(data) {
+  localStorage.setItem(DELIVERY_KEY, JSON.stringify(data));
 }
 
 function saveData() {
@@ -994,14 +1079,33 @@ function setupApp() {
   // Botão nova categoria
   document.getElementById("btn-add-cat").addEventListener("click", () => openCatModal());
 
+  // Botão nova zona de entrega
+  document.getElementById("btn-add-zone").addEventListener("click", () => openZoneModal());
+
+  // Toggle entrega ativa
+  document.getElementById("delivery-enabled-toggle").addEventListener("change", function() {
+    const data = loadDeliveryData();
+    data.enabled = this.checked;
+    saveDeliveryData(data);
+    updateDeliveryToggleDesc(this.checked);
+    showToast(null, this.checked ? "✅ Entrega por região ativada!" : "Taxa de entrega desativada.", this.checked ? "success" : "");
+  });
+
   // Modais — fechar
   setupModalClose("product-modal-overlay", "product-modal-close", "product-modal-cancel", closeProductModal);
   setupModalClose("cat-modal-overlay", "cat-modal-close", "cat-modal-cancel", closeCatModal);
+  setupModalClose("zone-modal-overlay", "zone-modal-close", "zone-modal-cancel", closeZoneModal);
   setupModalClose("confirm-modal-overlay", "confirm-cancel", null, closeConfirmModal);
 
   // Salvar produto
   document.getElementById("product-modal-save").addEventListener("click", saveProduct);
   document.getElementById("cat-modal-save").addEventListener("click", saveCategory);
+  document.getElementById("zone-modal-save").addEventListener("click", saveZone);
+
+  // Radio buttons da taxa — mostra/oculta campo de valor
+  document.querySelectorAll('input[name="fee-type"]').forEach(r => {
+    r.addEventListener("change", updateZoneFeeWrap);
+  });
   document.getElementById("confirm-ok").addEventListener("click", () => {
     if (pendingDeleteFn) { pendingDeleteFn(); pendingDeleteFn = null; }
     closeConfirmModal();
@@ -1022,10 +1126,13 @@ function closeSidebar() {
 }
 
 // ── NAVEGAÇÃO ─────────────────────────────────────────────────
+const DELIVERY_KEY = "zp_delivery_data";
+
 const pageConfig = {
-  dashboard:  { title: "Visão Geral",    sub: "Resumo do seu cardápio",   action: false },
-  products:   { title: "Produtos",       sub: "Gerencie seus itens",      action: true  },
-  categories: { title: "Categorias",     sub: "Organize seu cardápio",    action: false },
+  dashboard:  { title: "Visão Geral",         sub: "Resumo do seu cardápio",      action: false },
+  products:   { title: "Produtos",            sub: "Gerencie seus itens",         action: true  },
+  categories: { title: "Categorias",          sub: "Organize seu cardápio",       action: false },
+  delivery:   { title: "Taxas de Entrega",    sub: "Configure por região",        action: false },
 };
 
 function navigateTo(page) {
@@ -1047,6 +1154,7 @@ function navigateTo(page) {
   if (page === "dashboard")  renderDashboard();
   if (page === "products")   renderProducts();
   if (page === "categories") renderCategories();
+  if (page === "delivery")   renderDelivery();
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────
@@ -1366,6 +1474,140 @@ function confirmDeleteCat(idx) {
   openOverlay("confirm-modal-overlay", "confirm-modal");
 }
 
+// ── TAXAS DE ENTREGA ──────────────────────────────────────────
+
+function updateDeliveryToggleDesc(enabled) {
+  document.getElementById("delivery-toggle-desc").textContent =
+    enabled ? "✅ Taxa de entrega ativa — clientes veem o valor no carrinho" : "Ative para cobrar entrega por região";
+}
+
+function renderDelivery() {
+  const data   = loadDeliveryData();
+  const toggle = document.getElementById("delivery-enabled-toggle");
+  toggle.checked = !!data.enabled;
+  updateDeliveryToggleDesc(!!data.enabled);
+
+  const zones = data.zones || [];
+  document.getElementById("delivery-count").textContent = `${zones.length} região${zones.length !== 1 ? "ões" : ""} cadastrada${zones.length !== 1 ? "s" : ""}`;
+
+  const el = document.getElementById("delivery-zones-list");
+  if (zones.length === 0) {
+    el.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">🗺️</div>
+        <div class="empty-title">Nenhuma região cadastrada</div>
+        <div class="empty-sub">Clique em "+ Nova região" para adicionar bairros e taxas</div>
+      </div>`;
+    return;
+  }
+
+  el.innerHTML = zones.map((zone, idx) => {
+    const feeLabel = zone.fee === null  ? `<span style="color:var(--danger);font-weight:700">Não entregamos</span>`
+                   : zone.fee === 0     ? `<span style="color:var(--brand-dk);font-weight:700">Grátis</span>`
+                   :                      `<span style="font-weight:700">${formatCurrency(zone.fee)}</span>`;
+    return `
+    <div class="cat-item">
+      <div class="cat-emoji">📍</div>
+      <div class="cat-info">
+        <div class="cat-name">${zone.neighborhood}</div>
+        <div class="cat-count">Taxa: ${feeLabel.replace(/<[^>]+>/g, "")}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        ${feeLabel}
+        <div class="cat-actions">
+          <button class="pac-btn btn-edit" title="Editar" onclick="editZone(${idx})">✏️</button>
+          <button class="pac-btn btn-delete" title="Excluir" onclick="confirmDeleteZone(${idx})">🗑️</button>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function openZoneModal(zone = null, idx = null) {
+  document.getElementById("zone-modal-title").textContent = zone ? "Editar Região" : "Nova Região";
+  document.getElementById("edit-zone-idx").value  = idx !== null ? idx : "";
+  document.getElementById("edit-zone-name").value = zone ? zone.neighborhood : "";
+
+  // Define tipo de taxa
+  if (!zone || zone.fee === null) {
+    document.getElementById("fee-type-none").checked  = !zone ? false : true;
+    document.getElementById("fee-type-free").checked  = false;
+    document.getElementById("fee-type-value").checked = !zone;
+    document.getElementById("edit-zone-fee").value    = "";
+  } else if (zone.fee === 0) {
+    document.getElementById("fee-type-free").checked  = true;
+    document.getElementById("fee-type-value").checked = false;
+    document.getElementById("fee-type-none").checked  = false;
+    document.getElementById("edit-zone-fee").value    = "";
+  } else {
+    document.getElementById("fee-type-value").checked = true;
+    document.getElementById("fee-type-free").checked  = false;
+    document.getElementById("fee-type-none").checked  = false;
+    document.getElementById("edit-zone-fee").value    = zone.fee;
+  }
+
+  updateZoneFeeWrap();
+  openOverlay("zone-modal-overlay", "zone-modal");
+  setTimeout(() => document.getElementById("edit-zone-name").focus(), 150);
+}
+
+function updateZoneFeeWrap() {
+  const type = document.querySelector('input[name="fee-type"]:checked')?.value;
+  document.getElementById("zone-fee-wrap").style.display = type === "value" ? "flex" : "none";
+}
+
+function closeZoneModal() { closeOverlay("zone-modal-overlay", "zone-modal"); }
+
+function editZone(idx) {
+  const data = loadDeliveryData();
+  openZoneModal(data.zones[idx], idx);
+}
+
+function saveZone() {
+  const name = document.getElementById("edit-zone-name").value.trim();
+  if (!name) { showToast(null, "⚠️ Informe o nome da região"); return; }
+
+  const type    = document.querySelector('input[name="fee-type"]:checked')?.value;
+  const feeRaw  = document.getElementById("edit-zone-fee").value;
+  let fee;
+
+  if (type === "free")  fee = 0;
+  else if (type === "none") fee = null;
+  else {
+    fee = parseFloat(feeRaw);
+    if (isNaN(fee) || fee < 0) { showToast(null, "⚠️ Informe um valor válido"); return; }
+  }
+
+  const data  = loadDeliveryData();
+  const idx   = document.getElementById("edit-zone-idx").value;
+  const entry = { neighborhood: name, fee };
+
+  if (idx !== "") {
+    data.zones[parseInt(idx)] = entry;
+  } else {
+    data.zones.push(entry);
+  }
+
+  saveDeliveryData(data);
+  closeZoneModal();
+  renderDelivery();
+  showToast(null, "✅ Região salva!", "success");
+}
+
+function confirmDeleteZone(idx) {
+  const data = loadDeliveryData();
+  const zone = data.zones[idx];
+  document.getElementById("confirm-title").textContent = `Excluir "${zone.neighborhood}"?`;
+  document.getElementById("confirm-desc").textContent  = "Esta região será removida da lista de entregas.";
+  pendingDeleteFn = () => {
+    data.zones.splice(idx, 1);
+    saveDeliveryData(data);
+    renderDelivery();
+    showToast(null, "Região excluída.", "error");
+  };
+  openOverlay("confirm-modal-overlay", "confirm-modal");
+}
+
 function closeConfirmModal() { closeOverlay("confirm-modal-overlay", "confirm-modal"); }
 
 // ── HELPERS MODAL ─────────────────────────────────────────────
@@ -1397,6 +1639,7 @@ document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
   if (document.getElementById("product-modal").classList.contains("open")) closeProductModal();
   else if (document.getElementById("cat-modal").classList.contains("open")) closeCatModal();
+  else if (document.getElementById("zone-modal").classList.contains("open")) closeZoneModal();
   else if (document.getElementById("confirm-modal").classList.contains("open")) closeConfirmModal();
 });
 </script>
