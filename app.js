@@ -23,6 +23,13 @@ document.addEventListener("DOMContentLoaded", () => {
   if (savedMenu) {
     try { CONFIG.menu = JSON.parse(savedMenu); } catch(e) {}
   }
+
+  // Carrega taxas de entrega do localStorage se admin já editou
+  const savedDelivery = localStorage.getItem("zp_delivery_data");
+  if (savedDelivery) {
+    try { CONFIG.delivery = JSON.parse(savedDelivery); } catch(e) {}
+  }
+
   applyConfig();
   renderCategories();
   renderProducts();
@@ -192,8 +199,41 @@ function updateCartPanel() {
       </div>
     </div>`).join("");
 
-  const total = cartItems.reduce((s, { item, quantity }) => s + item.price * quantity, 0);
-  totalEl.textContent = formatCurrency(total);
+  const total    = cartItems.reduce((s, { item, quantity }) => s + item.price * quantity, 0);
+  const { fee, zone } = getDeliveryFee();
+  const grandTotal    = fee !== null ? total + fee : total;
+
+  // Monta linha de subtotal + taxa se aplicável
+  let totalHtml = "";
+  if (fee !== null && fee > 0) {
+    totalHtml = `
+      <div class="cpanel-subtotal">
+        <span class="cpanel-subtotal-label">Subtotal</span>
+        <span class="cpanel-subtotal-value">${formatCurrency(total)}</span>
+      </div>
+      <div class="cpanel-subtotal cpanel-fee">
+        <span class="cpanel-subtotal-label">🛵 Entrega${zone ? ` · ${zone}` : ""}</span>
+        <span class="cpanel-subtotal-value">${fee === 0 ? "Grátis" : formatCurrency(fee)}</span>
+      </div>`;
+  } else if (fee === null && zone) {
+    totalHtml = `
+      <div class="cpanel-delivery-warn">
+        ⚠️ Não entregamos em <strong>${zone}</strong>. Confirme o endereço.
+      </div>`;
+  } else if (fee === 0 && zone) {
+    totalHtml = `
+      <div class="cpanel-subtotal cpanel-fee">
+        <span class="cpanel-subtotal-label">🛵 Entrega em ${zone}</span>
+        <span class="cpanel-subtotal-value cpanel-fee-free">Grátis</span>
+      </div>`;
+  }
+
+  totalEl.textContent = formatCurrency(grandTotal);
+
+  // Injeta linhas de taxa antes do total no topo
+  const feeEl = document.getElementById("cpanel-fee-lines");
+  if (feeEl) feeEl.innerHTML = totalHtml;
+
   orderForm.style.display   = "block";
   cpanelTotal.style.display = "flex";
   cpanelFoot.style.display  = "block";
@@ -282,7 +322,48 @@ function validate() {
   return true;
 }
 
-// ─── MONTAR MENSAGEM ──────────────────────────────────────────
+// ─── TAXA DE ENTREGA ──────────────────────────────────────────
+
+// Retorna { fee: number|null, zone: string|null }
+// fee: null = não entrega nessa região
+// fee: 0    = grátis
+function getDeliveryFee() {
+  const delivery = CONFIG.delivery;
+  if (!delivery || !delivery.enabled) return { fee: 0, zone: null };
+
+  // Pega o bairro — do CEP ou do campo manual
+  const isCepMode   = document.getElementById("address-cep-mode").style.display !== "none";
+  const neighborhood = isCepMode
+    ? document.getElementById("address-neighborhood").value.trim()
+    : document.getElementById("customer-address").value.trim();
+
+  if (!neighborhood) return { fee: 0, zone: null }; // sem endereço, não exibe
+
+  // Busca zona correspondente (case-insensitive, partial match)
+  const zones = delivery.zones || [];
+  const match = zones.find(z =>
+    neighborhood.toLowerCase().includes(z.neighborhood.toLowerCase()) ||
+    z.neighborhood.toLowerCase().includes(neighborhood.toLowerCase())
+  );
+
+  if (match) return { fee: match.fee, zone: match.neighborhood };
+
+  // Região não listada
+  return { fee: delivery.defaultFee ?? null, zone: neighborhood };
+}
+
+// Retorna total dos itens do carrinho
+function getItemsTotal() {
+  return Object.values(cart).reduce((s, { item, quantity }) => s + item.price * quantity, 0);
+}
+
+// Retorna total final (itens + taxa)
+function getGrandTotal() {
+  const itemsTotal = getItemsTotal();
+  const { fee }    = getDeliveryFee();
+  return fee !== null ? itemsTotal + fee : itemsTotal;
+}
+
 
 function buildMessage(orderNumber) {
   const cartItems       = Object.values(cart);
@@ -292,7 +373,9 @@ function buildMessage(orderNumber) {
   const selectedPayBtn  = document.querySelector(".pay-btn.selected");
   const paymentMethod   = selectedPayBtn?.dataset.value || null;
   const changeInput     = document.getElementById("customer-change").value.trim();
-  const total           = cartItems.reduce((s, { item, quantity }) => s + item.price * quantity, 0);
+  const itemsTotal      = getItemsTotal();
+  const { fee, zone }   = getDeliveryFee();
+  const grandTotal      = fee !== null ? itemsTotal + fee : itemsTotal;
 
   const itemLines = cartItems
     .map(({ item, quantity }) => `• ${item.name} x${quantity} — ${formatCurrency(item.price * quantity)}`)
@@ -305,15 +388,23 @@ function buildMessage(orderNumber) {
   if (customerAddress) msg += `📍 *Endereço:* ${customerAddress}\n`;
   msg += "\n";
   msg += `📋 *Itens do Pedido:*\n${itemLines}\n\n`;
-  msg += `💰 *Total: ${formatCurrency(total)}*\n\n`;
+
+  // Taxa de entrega
+  if (fee !== null && fee > 0 && zone) {
+    msg += `🛵 *Entrega (${zone}):* ${formatCurrency(fee)}\n`;
+  } else if (fee === 0 && zone) {
+    msg += `🛵 *Entrega (${zone}):* Grátis\n`;
+  }
+
+  msg += `💰 *Total: ${formatCurrency(grandTotal)}*\n\n`;
 
   if (paymentMethod) {
     const labels = { pix: "Pix", credito: "Cartão de Crédito", debito: "Cartão de Débito", dinheiro: "Dinheiro" };
     msg += `💳 *Pagamento:* ${labels[paymentMethod]}\n`;
     if (paymentMethod === "dinheiro" && changeInput) {
       const changeValue = parseFloat(changeInput.replace(",", "."));
-      if (!isNaN(changeValue) && changeValue >= total) {
-        const troco = changeValue - total;
+      if (!isNaN(changeValue) && changeValue >= grandTotal) {
+        const troco = changeValue - grandTotal;
         msg += troco === 0
           ? `🔄 *Pagamento exato* — sem troco\n`
           : `🔄 *Troco para:* ${formatCurrency(changeValue)} _(troco: ${formatCurrency(troco)})_\n`;
@@ -335,25 +426,32 @@ function openModal() {
   const selectedPayBtn  = document.querySelector(".pay-btn.selected");
   const paymentMethod   = selectedPayBtn?.dataset.value || null;
   const changeInput     = document.getElementById("customer-change").value.trim();
-  const total           = cartItems.reduce((s, { item, quantity }) => s + item.price * quantity, 0);
+  const itemsTotal      = getItemsTotal();
+  const { fee, zone }   = getDeliveryFee();
+  const grandTotal      = fee !== null ? itemsTotal + fee : itemsTotal;
   const labels          = { pix: "💠 Pix", credito: "💳 Cartão de Crédito", debito: "🏦 Cartão de Débito", dinheiro: "💵 Dinheiro" };
 
   let trocoHtml = "";
   if (paymentMethod === "dinheiro" && changeInput) {
     const changeValue = parseFloat(changeInput.replace(",", "."));
-    if (!isNaN(changeValue) && changeValue >= total) {
-      const troco = changeValue - total;
+    if (!isNaN(changeValue) && changeValue >= grandTotal) {
+      const troco = changeValue - grandTotal;
       trocoHtml = troco === 0
         ? `<div class="preview-row"><span>Troco</span><strong>Valor exato</strong></div>`
         : `<div class="preview-row"><span>Troco para</span><strong>${formatCurrency(changeValue)} <em class="troco-val">(troco: ${formatCurrency(troco)})</em></strong></div>`;
     }
   }
 
-  // Pré-visualiza o número (não incrementa ainda — isso só acontece no buildMessage)
+  let feeHtml = "";
+  if (fee !== null && fee > 0) {
+    feeHtml = `<div class="preview-row"><span>🛵 Entrega${zone ? ` · ${zone}` : ""}</span><strong>${formatCurrency(fee)}</strong></div>`;
+  } else if (fee === 0 && zone) {
+    feeHtml = `<div class="preview-row"><span>🛵 Entrega · ${zone}</span><strong style="color:var(--green-dk)">Grátis</strong></div>`;
+  }
+
   const previewNumber = String(parseInt(localStorage.getItem("zp_order_number") || "0") + 1).padStart(4, "0");
 
   document.getElementById("modal-body").innerHTML = `
-    <!-- Itens -->
     <div class="preview-section">
       <div class="preview-section-title">🧾 Pedido ${previewNumber}</div>
       ${cartItems.map(({ item, quantity }) => `
@@ -361,21 +459,18 @@ function openModal() {
           <span>${item.name} <em class="qty-tag">×${quantity}</em></span>
           <strong>${formatCurrency(item.price * quantity)}</strong>
         </div>`).join("")}
+      ${feeHtml}
       <div class="preview-row preview-total">
         <span>Total</span>
-        <strong>${formatCurrency(total)}</strong>
+        <strong>${formatCurrency(grandTotal)}</strong>
       </div>
     </div>
-
-    <!-- Dados -->
     <div class="preview-section">
       <div class="preview-section-title">👤 Dados</div>
       ${customerName    ? `<div class="preview-row"><span>Nome</span><strong>${customerName}</strong></div>` : ""}
       ${customerPhone   ? `<div class="preview-row"><span>Telefone</span><strong>${customerPhone}</strong></div>` : ""}
       ${customerAddress ? `<div class="preview-row"><span>Endereço</span><strong>${customerAddress}</strong></div>` : ""}
     </div>
-
-    <!-- Pagamento -->
     <div class="preview-section">
       <div class="preview-section-title">💳 Pagamento</div>
       <div class="preview-row">
@@ -384,20 +479,14 @@ function openModal() {
       </div>
       ${trocoHtml}
     </div>
-
     <p class="preview-note">Confira os dados antes de enviar. Após confirmar, o WhatsApp abrirá com o pedido pronto.</p>
   `;
 
-  // Monta a URL antes para usar no confirm
-  // Número será gerado apenas ao confirmar — aqui só pré-visualizamos
-  pendingWhatsappUrl = "PENDING"; // marcador, URL real gerada no confirmOrder
-
+  pendingWhatsappUrl = "PENDING";
   document.getElementById("modal-overlay").classList.add("open");
   document.getElementById("order-modal").classList.add("open");
   document.getElementById("modal-overlay").setAttribute("aria-hidden", "false");
   document.body.style.overflow = "hidden";
-
-  // Foca o botão confirmar para Enter funcionar direto
   setTimeout(() => document.getElementById("modal-confirm").focus(), 100);
 }
 
@@ -416,8 +505,7 @@ function confirmOrder() {
   const customerName  = document.getElementById("customer-name").value.trim();
   const customerPhone = document.getElementById("customer-phone").value.trim();
   const customerAddr  = buildAddressString();
-  const cartItems     = Object.values(cart);
-  const total         = cartItems.reduce((s, { item, quantity }) => s + item.price * quantity, 0);
+  const total         = getGrandTotal();
 
   // Monta e envia WhatsApp
   const msg = buildMessage(orderNumber);
@@ -647,6 +735,8 @@ async function buscarCEP() {
     status.textContent = "✅ Endereço encontrado! Confirme o número.";
     status.className = "cep-status cep-status--ok"; icon.textContent = "✓";
     setTimeout(() => document.getElementById("address-number").focus(), 100);
+    // Recalcula taxa com o novo bairro
+    updateCartPanel();
   } catch {
     status.textContent = "⚠️ Erro de conexão. Tente digitar manualmente.";
     status.className = "cep-status cep-status--error"; icon.textContent = "→";
