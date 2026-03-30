@@ -294,8 +294,11 @@ body {
 
 /* Linha de total no topo */
 .cpanel-total {
-  display: flex; align-items: center; justify-content: space-between;
   padding: 8px 18px 12px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.cpanel-total-row {
+  display: flex; align-items: center; justify-content: space-between;
 }
 .cpanel-total-label {
   font-size: 0.7rem; font-weight: 700;
@@ -304,6 +307,22 @@ body {
 .cpanel-total-value {
   font-family: var(--font-d); font-size: 1.2rem; font-weight: 800;
   color: var(--ink); letter-spacing: -0.03em;
+}
+.cpanel-fee-lines { display: flex; flex-direction: column; gap: 2px; }
+.cpanel-subtotal {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 0.75rem;
+}
+.cpanel-subtotal-label { color: var(--muted); font-weight: 500; }
+.cpanel-subtotal-value { color: var(--ink-2); font-weight: 600; }
+.cpanel-fee .cpanel-subtotal-label { color: var(--muted); }
+.cpanel-fee-free { color: var(--green-dk) !important; }
+.cpanel-delivery-warn {
+  font-size: 0.74rem; color: #92400e;
+  background: var(--warn-lt, #fffbeb);
+  border: 1px solid #fde68a;
+  border-radius: var(--r-sm); padding: 7px 10px;
+  margin-top: 4px; line-height: 1.4;
 }
 
 /* ── ZONA B — scroll único ──────────────────────────────── */
