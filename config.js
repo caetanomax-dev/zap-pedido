@@ -161,8 +161,31 @@ const CONFIG = {
   ],
 
   // ----------------------------------------------------------
-  // CONFIGURAÇÕES VISUAIS (opcional)
+  // TAXA DE ENTREGA POR REGIÃO
   // ----------------------------------------------------------
+  // Lista de bairros/regiões com suas taxas.
+  // O sistema identifica automaticamente pelo bairro do CEP
+  // ou pelo texto digitado no endereço manual.
+  //
+  // fee: 0        = Grátis
+  // fee: null     = Não entregamos nessa região
+  // defaultFee    = Taxa padrão para regiões não listadas
+  //                 null = não entregamos fora das regiões cadastradas
+  // ----------------------------------------------------------
+  delivery: {
+    enabled:     true,         // false = desativa taxa (entrega grátis ou retirada)
+    defaultFee:  null,         // Taxa para bairros não listados (null = não entrega)
+    zones: [
+      { neighborhood: "Centro",        fee: 0     },
+      { neighborhood: "Vila Mariana",  fee: 5.00  },
+      { neighborhood: "Moema",         fee: 8.00  },
+      { neighborhood: "Ipiranga",      fee: 7.00  },
+      { neighborhood: "Santo André",   fee: 15.00 },
+      { neighborhood: "São Bernardo",  fee: 18.00 },
+    ],
+  },
+
+
   ui: {
     primaryColor: "#25D366",   // Verde WhatsApp (padrão)
     accentColor:  "#128C7E",   // Verde escuro
