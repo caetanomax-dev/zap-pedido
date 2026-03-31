@@ -369,22 +369,27 @@ async function loadOrders() {
 }
 
 function startRealtime() {
-  try {
-    realtimeEs = sb.subscribe("orders", (payload) => {
-      if (payload.type === "INSERT") {
-        const order = payload.record;
-        if (order.store_id === STORE_ID) {
-          allOrders.unshift(order);
-          renderAll();
-          notifyNewOrder(order);
-        }
+  // Polling a cada 4s + WebSocket quando disponível
+  realtimeEs = sb.subscribe(
+    "orders",
+    // onInsert — novo pedido
+    (order) => {
+      if (order.store_id !== STORE_ID) return;
+      const exists = allOrders.find(o => o.id === order.id);
+      if (!exists) {
+        allOrders.unshift(order);
+        renderAll();
+        notifyNewOrder(order);
       }
-      if (payload.type === "UPDATE") {
-        const idx = allOrders.findIndex(o => o.id === payload.record.id);
-        if (idx >= 0) { allOrders[idx] = payload.record; renderAll(); }
-      }
-    });
-  } catch {}
+    },
+    // onUpdate — status/pagamento alterado
+    (order) => {
+      if (order.store_id !== STORE_ID) return;
+      const idx = allOrders.findIndex(o => o.id === order.id);
+      if (idx >= 0) { allOrders[idx] = order; renderAll(); }
+    },
+    4000 // intervalo de polling em ms
+  );
 }
 
 function notifyNewOrder(order) {
