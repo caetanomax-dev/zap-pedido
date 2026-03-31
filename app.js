@@ -413,6 +413,11 @@ function buildMessage(orderNumber) {
     msg += "\n";
   }
   msg += CONFIG.order.footer;
+
+  // Link de acompanhamento
+  const baseUrl = window.location.href.replace("index.html","").replace(/\/$/, "");
+  msg += `\n\n🔗 *Acompanhe seu pedido:*\n${baseUrl}/acompanhar.html?pedido=${orderNumber}`;
+
   return msg;
 }
 
@@ -505,15 +510,48 @@ function confirmOrder() {
   const customerName  = document.getElementById("customer-name").value.trim();
   const customerPhone = document.getElementById("customer-phone").value.trim();
   const customerAddr  = buildAddressString();
-  const total         = getGrandTotal();
+  const cartItems     = Object.values(cart);
+  const itemsTotal    = getItemsTotal();
+  const { fee, zone } = getDeliveryFee();
+  const deliveryFee   = fee !== null ? fee : 0;
+  const grandTotal    = itemsTotal + deliveryFee;
+  const selectedPay   = document.querySelector(".pay-btn.selected");
+  const payMethod     = selectedPay?.dataset.value || null;
+  const changeVal     = parseFloat(document.getElementById("customer-change").value || "0") || null;
 
-  // Monta e envia WhatsApp
+  // Monta itens para salvar
+  const itemsData = cartItems.map(({ item, quantity }) => ({
+    id: item.id, name: item.name, price: item.price, quantity,
+  }));
+
+  // Salva no Supabase (assíncrono, não bloqueia o fluxo)
+  const orderData = {
+    order_number:     orderNumber,
+    store_id:         "default",
+    customer_name:    customerName  || null,
+    customer_phone:   customerPhone || null,
+    customer_address: customerAddr  || null,
+    payment_method:   payMethod,
+    payment_change:   changeVal,
+    items:            itemsData,
+    items_total:      itemsTotal,
+    delivery_fee:     deliveryFee,
+    grand_total:      grandTotal,
+    status:           "received",
+    status_history:   [],
+  };
+
+  if (typeof sb !== "undefined") {
+    sb.insert("orders", orderData).catch(() => {});
+  }
+
+  // Monta mensagem WhatsApp com link de acompanhamento
   const msg = buildMessage(orderNumber);
   const whatsappUrl = `https://wa.me/${CONFIG.store.whatsappNumber}?text=${encodeURIComponent(msg)}`;
   setTimeout(() => { window.location.href = whatsappUrl; }, 320);
 
   // Mostra tela de sucesso
-  showSuccessScreen({ orderNumber, customerName, customerPhone, customerAddr, total });
+  showSuccessScreen({ orderNumber, customerName, customerPhone, customerAddr, total: grandTotal });
 
   // Zera carrinho e formulário
   Object.keys(cart).forEach(id => { updateCardUI(id, 0); delete cart[id]; });
