@@ -28,11 +28,26 @@ const CONFIG = {
   // DADOS DA LOJA
   // ----------------------------------------------------------
   store: {
-    name:            "Pizzaria Bella Napoli",      // Nome que aparece no topo
-    tagline:         "A melhor pizza da cidade",   // Subtítulo (opcional)
-    logo:            "🍕",                         // Emoji ou URL de imagem (ex: "logo.png")
-    whatsappNumber:  "5511999999999",              // ⚠️ Formato: 55 + DDD + número (sem espaços)
-    responseTime:    "30 minutos",                 // Tempo médio de resposta (aparece na tela de sucesso)
+    name:            "Pizzaria Bella Napoli",
+    tagline:         "A melhor pizza da cidade",
+    logo:            "🍕",            // Emoji OU URL de imagem: "https://..." ou "logo.png"
+    whatsappNumber:  "5511999999999",
+    responseTime:    "30 minutos",
+  },
+
+  // ----------------------------------------------------------
+  // APARÊNCIA (cores e identidade visual)
+  // ----------------------------------------------------------
+  // Para usar a logo do cliente: coloque o arquivo logo.png
+  // na mesma pasta e informe "logo.png" no campo acima.
+  //
+  // Cores em formato HEX — use https://coolors.co para escolher
+  // ----------------------------------------------------------
+  appearance: {
+    primaryColor:  "#22c55e",   // cor principal (botões, destaques)
+    headerColor:   "#0f172a",   // cor do cabeçalho
+    accentColor:   "#16a34a",   // cor de destaque secundária
+    fontColor:     "#18181b",   // cor do texto principal
   },
 
   // ----------------------------------------------------------
@@ -58,14 +73,16 @@ const CONFIG = {
           name:        "Pizza Margherita",
           description: "Molho, mussarela, manjericão",
           price:       45.00,
-          active:      true,   // true = visível | false = oculto
-          stock:       true,   // true = disponível | false = esgotado
+          image:       "",      // URL da imagem (opcional): "https://..." ou deixe "" para sem foto
+          active:      true,
+          stock:       true,
         },
         {
           id:          2,
           name:        "Pizza Calabresa",
           description: "Calabresa, cebola, azeitona",
           price:       48.00,
+          image:       "",
           active:      true,
           stock:       true,
         },
@@ -74,15 +91,17 @@ const CONFIG = {
           name:        "Pizza Quatro Queijos",
           description: "Mussarela, prato, provolone, gorgonzola",
           price:       52.00,
+          image:       "",
           active:      true,
-          stock:       false,  // ← Exemplo: esgotada (aparece, mas não pode ser adicionada)
+          stock:       false,
         },
         {
           id:          4,
           name:        "Pizza Portuguesa",
           description: "Presunto, ovo, palmito, mussarela",
           price:       50.00,
-          active:      false,  // ← Exemplo: oculta (não aparece no cardápio)
+          image:       "",
+          active:      false,
           stock:       true,
         },
 
