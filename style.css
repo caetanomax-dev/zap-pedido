@@ -184,7 +184,30 @@ body {
 .qty-btn:active { transform: scale(0.85); }
 .qty-value { font-family: var(--font-d); font-size: 0.85rem; font-weight: 800; color: var(--ink); min-width: 14px; text-align: center; }
 
-.badge-unavailable {
+/* Card com imagem */
+.product-card.has-image { flex-direction: column; align-items: stretch; padding: 0; }
+.product-card.has-image .product-info { padding: 12px 14px 8px; }
+.product-card.has-image .product-controls { padding: 0 14px 12px; flex-direction: row; justify-content: space-between; align-items: center; }
+
+.product-img-wrap {
+  position: relative; width: 100%; aspect-ratio: 16/9;
+  overflow: hidden; border-radius: var(--r) var(--r) 0 0;
+  background: var(--surface-2);
+}
+.product-img {
+  width: 100%; height: 100%; object-fit: cover;
+  display: block; transition: transform 0.3s ease;
+}
+.product-card:hover .product-img { transform: scale(1.04); }
+.product-img-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-family: var(--font-d); font-size: 0.8rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+
+
   display: inline-flex; align-items: center;
   padding: 5px 10px; border-radius: var(--r-sm);
   background: var(--surface-2); border: 1.5px solid var(--border);
