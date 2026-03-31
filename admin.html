@@ -816,6 +816,14 @@ body {
         <textarea id="edit-desc" placeholder="Ingredientes, tamanho, observações..."></textarea>
       </div>
 
+      <div class="form-field">
+        <label>Foto do produto <span style="font-weight:400;text-transform:none;font-size:0.7rem;color:#94a3b8">· URL da imagem (opcional)</span></label>
+        <input type="url" id="edit-image" placeholder="https://... ou deixe vazio" />
+        <div id="image-preview-wrap" style="display:none;margin-top:6px">
+          <img id="image-preview" src="" alt="Preview" style="width:100%;height:120px;object-fit:cover;border-radius:8px;border:1.5px solid var(--border)"/>
+        </div>
+      </div>
+
       <div class="form-row">
         <div class="form-field">
           <label>Preço *</label>
@@ -953,29 +961,44 @@ body {
    Dados salvos em localStorage (Plano Pro)
    ============================================================ */
 
-// ── SENHA ─────────────────────────────────────────────────────
-// Defina a senha do cliente aqui:
-const ADMIN_PASSWORD = "admin123";
+
+// ── SISTEMA DE USUÁRIOS ───────────────────────────────────────
+// Níveis: "owner" = tudo | "manager" = produtos+entregas | "operator" = só ver pedidos
+//
+// Para adicionar usuário: { name, password, role }
+// Para remover: apague a linha
 // ─────────────────────────────────────────────────────────────
+const USERS = [
+  { name: "Proprietário",  password: "admin123",  role: "owner"    },
+  { name: "Gerente",       password: "gerente456", role: "manager"  },
+  { name: "Atendente",     password: "operador789",role: "operator" },
+];
+
+// Permissões por nível
+const ROLES = {
+  owner:    { products: true,  categories: true,  delivery: true,  users: true  },
+  manager:  { products: true,  categories: true,  delivery: true,  users: false },
+  operator: { products: false, categories: false, delivery: false, users: false },
+};
+
+let currentUser = null; // usuário logado
 
 const STORAGE_KEY = "zp_menu_data";
 
 // ── ESTADO ────────────────────────────────────────────────────
-let menuData   = [];   // array de categorias com items
+let menuData      = [];
 let currentFilter = "all";
 let pendingDeleteFn = null;
 
 // ── INICIALIZAÇÃO ─────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
-  // Verifica se já está logado
-  if (sessionStorage.getItem("zp_admin_auth") === "ok") {
+  const saved = sessionStorage.getItem("zp_admin_user");
+  if (saved) {
+    currentUser = JSON.parse(saved);
     showApp();
   }
 
-  // Aplica nome da loja na tela de login
   document.getElementById("login-logo").textContent = CONFIG.store.logo || "🍕";
-
-  // Login
   document.getElementById("btn-login").addEventListener("click", tryLogin);
   document.getElementById("login-password").addEventListener("keydown", (e) => {
     if (e.key === "Enter") tryLogin();
@@ -983,10 +1006,13 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function tryLogin() {
-  const pw = document.getElementById("login-password").value;
+  const pw  = document.getElementById("login-password").value;
   const err = document.getElementById("login-error");
-  if (pw === ADMIN_PASSWORD) {
-    sessionStorage.setItem("zp_admin_auth", "ok");
+  const user = USERS.find(u => u.password === pw);
+
+  if (user) {
+    currentUser = user;
+    sessionStorage.setItem("zp_admin_user", JSON.stringify(user));
     err.style.display = "none";
     showApp();
   } else {
@@ -996,12 +1022,49 @@ function tryLogin() {
   }
 }
 
+function can(permission) {
+  if (!currentUser) return false;
+  return ROLES[currentUser.role]?.[permission] ?? false;
+}
+
+
 function showApp() {
   document.getElementById("login-screen").style.display = "none";
   document.getElementById("app").classList.add("visible");
   loadData();
   setupApp();
-  navigateTo("dashboard");
+
+  // Mostra nome e role do usuário na sidebar
+  const roleLabels = { owner: "Proprietário 👑", manager: "Gerente", operator: "Atendente" };
+  document.getElementById("sb-logo").textContent  = CONFIG.store.logo || "🍕";
+  document.getElementById("sb-store").textContent = CONFIG.store.name;
+
+  // Adiciona chip de usuário no footer da sidebar
+  const footer = document.querySelector(".sidebar-footer");
+  if (footer && currentUser) {
+    const chip = document.createElement("div");
+    chip.style.cssText = "display:flex;align-items:center;gap:8px;padding:8px 10px;margin-bottom:6px;border-radius:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.07)";
+    chip.innerHTML = `
+      <div style="width:28px;height:28px;border-radius:50%;background:var(--brand);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;color:#fff;flex-shrink:0">
+        ${currentUser.name.charAt(0).toUpperCase()}
+      </div>
+      <div style="min-width:0">
+        <div style="font-family:var(--font-d);font-size:0.78rem;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${currentUser.name}</div>
+        <div style="font-size:0.65rem;color:rgba(255,255,255,0.35)">${roleLabels[currentUser.role] || currentUser.role}</div>
+      </div>`;
+    footer.insertBefore(chip, footer.firstChild);
+  }
+
+  // Aplica restrições de navegação por role
+  const perms = ROLES[currentUser?.role] || {};
+  if (!perms.products)   document.querySelector('[data-page="products"]')?.remove();
+  if (!perms.categories) document.querySelector('[data-page="categories"]')?.remove();
+  if (!perms.delivery)   document.querySelector('[data-page="delivery"]')?.remove();
+
+  // Primeiro item visível
+  const firstNav = document.querySelector(".nav-item[data-page]");
+  const firstPage = firstNav?.dataset.page || "dashboard";
+  navigateTo(firstPage);
 }
 
 // ── DADOS ─────────────────────────────────────────────────────
@@ -1068,7 +1131,7 @@ function setupApp() {
 
   // Logout
   document.getElementById("btn-logout").addEventListener("click", () => {
-    sessionStorage.removeItem("zp_admin_auth");
+    sessionStorage.removeItem("zp_admin_user");
     location.reload();
   });
 
@@ -1101,6 +1164,11 @@ function setupApp() {
   document.getElementById("product-modal-save").addEventListener("click", saveProduct);
   document.getElementById("cat-modal-save").addEventListener("click", saveCategory);
   document.getElementById("zone-modal-save").addEventListener("click", saveZone);
+
+  // Preview de imagem no modal
+  document.getElementById("edit-image").addEventListener("input", function() {
+    updateImagePreview(this.value.trim());
+  });
 
   // Radio buttons da taxa — mostra/oculta campo de valor
   document.querySelectorAll('input[name="fee-type"]').forEach(r => {
@@ -1239,8 +1307,10 @@ function renderProducts(filter) {
   document.getElementById("products-grid").innerHTML = filtered.map(item => {
     const isActive  = item.active !== false;
     const inStock   = item.stock  !== false;
+    const hasImg    = item.image && item.image.trim() !== "";
     return `
     <div class="product-admin-card ${!isActive ? "is-inactive" : ""}" id="pac-${item.id}">
+      ${hasImg ? `<img src="${item.image}" alt="${item.name}" style="width:100%;height:100px;object-fit:cover;border-radius:var(--r) var(--r) 0 0;display:block" onerror="this.style.display='none'"/>` : ""}
       <div class="pac-top">
         <div class="pac-info">
           <div class="pac-cat">${item._cat}</div>
@@ -1336,17 +1406,21 @@ function openProductModal(item = null) {
     document.getElementById("edit-name").value         = item.name;
     document.getElementById("edit-desc").value         = item.description || "";
     document.getElementById("edit-price").value        = item.price;
+    document.getElementById("edit-image").value        = item.image || "";
     document.getElementById("edit-active").checked     = item.active !== false;
     document.getElementById("edit-stock").checked      = item.stock  !== false;
     sel.value = item._cat;
+    updateImagePreview(item.image || "");
   } else {
     document.getElementById("product-modal-title").textContent = "Novo Produto";
     document.getElementById("edit-product-id").value   = "";
     document.getElementById("edit-name").value         = "";
     document.getElementById("edit-desc").value         = "";
     document.getElementById("edit-price").value        = "";
+    document.getElementById("edit-image").value        = "";
     document.getElementById("edit-active").checked     = true;
     document.getElementById("edit-stock").checked      = true;
+    updateImagePreview("");
   }
 
   openOverlay("product-modal-overlay", "product-modal");
@@ -1373,6 +1447,7 @@ function saveProduct() {
     name,
     description: document.getElementById("edit-desc").value.trim(),
     price,
+    image:       document.getElementById("edit-image").value.trim(),
     active:      document.getElementById("edit-active").checked,
     stock:       document.getElementById("edit-stock").checked,
   };
@@ -1609,6 +1684,18 @@ function confirmDeleteZone(idx) {
 }
 
 function closeConfirmModal() { closeOverlay("confirm-modal-overlay", "confirm-modal"); }
+
+function updateImagePreview(url) {
+  const wrap = document.getElementById("image-preview-wrap");
+  const img  = document.getElementById("image-preview");
+  if (url && (url.startsWith("http") || url.startsWith("/"))) {
+    img.src = url;
+    wrap.style.display = "block";
+    img.onerror = () => { wrap.style.display = "none"; };
+  } else {
+    wrap.style.display = "none";
+  }
+}
 
 // ── HELPERS MODAL ─────────────────────────────────────────────
 function openOverlay(overlayId, modalId) {
