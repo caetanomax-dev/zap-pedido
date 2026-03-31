@@ -250,13 +250,14 @@ function mostrarPedido(order) {
 
 function iniciarRealtime(id) {
   if (realtimeEs) realtimeEs.close();
-  try {
-    realtimeEs = sb.subscribe("orders", payload => {
-      if (payload.type==="UPDATE" && payload.record?.id===id) {
-        mostrarPedido(payload.record);
-      }
-    });
-  } catch {}
+  realtimeEs = sb.subscribe(
+    "orders",
+    null, // onInsert — não nos interessa aqui
+    (order) => {
+      if (order.id === id) mostrarPedido(order);
+    },
+    5000 // polling a cada 5s
+  );
 }
 
 function fmt(v) { return Number(v).toLocaleString("pt-BR",{style:"currency",currency:"BRL"}); }
