@@ -41,12 +41,33 @@ function applyConfig() {
   document.getElementById("page-title").textContent  = CONFIG.store.name;
   document.getElementById("store-name").textContent  = CONFIG.store.name;
   document.getElementById("store-tagline").textContent = CONFIG.store.tagline || "";
-  document.getElementById("store-logo").textContent  = CONFIG.store.logo || "🛍️";
+
+  // Logo — suporta emoji ou URL de imagem
+  const logoEl = document.getElementById("store-logo");
+  const logo   = CONFIG.store.logo || "🛍️";
+  if (logo.startsWith("http") || logo.endsWith(".png") || logo.endsWith(".jpg") || logo.endsWith(".svg") || logo.endsWith(".webp")) {
+    logoEl.innerHTML = `<img src="${logo}" alt="Logo" style="width:28px;height:28px;border-radius:6px;object-fit:cover"/>`;
+  } else {
+    logoEl.textContent = logo;
+  }
+
+  // Cores da aparência (novo objeto appearance)
+  const ap   = CONFIG.appearance || {};
+  const root = document.documentElement;
+  if (ap.primaryColor) {
+    root.style.setProperty("--green",    ap.primaryColor);
+    root.style.setProperty("--green-dk", ap.accentColor  || ap.primaryColor);
+    root.style.setProperty("--green-lt", ap.primaryColor + "18");
+    root.style.setProperty("--green-bd", ap.primaryColor + "40");
+  }
+  if (ap.headerColor)  root.style.setProperty("--sidebar-bg", ap.headerColor);
+  if (ap.fontColor)    root.style.setProperty("--ink", ap.fontColor);
+
+  // Suporte legado ao objeto ui
   if (CONFIG.ui) {
-    const r = document.documentElement;
-    if (CONFIG.ui.primaryColor) r.style.setProperty("--color-primary", CONFIG.ui.primaryColor);
-    if (CONFIG.ui.accentColor)  r.style.setProperty("--color-accent",  CONFIG.ui.accentColor);
-    if (CONFIG.ui.headerBg)     r.style.setProperty("--color-header",  CONFIG.ui.headerBg);
+    if (CONFIG.ui.primaryColor) root.style.setProperty("--green",      CONFIG.ui.primaryColor);
+    if (CONFIG.ui.accentColor)  root.style.setProperty("--green-dk",   CONFIG.ui.accentColor);
+    if (CONFIG.ui.headerBg)     root.style.setProperty("--ink",        CONFIG.ui.headerBg);
   }
 }
 
@@ -95,10 +116,14 @@ function renderProducts(filterCat = null) {
 
 function createProductCard(item) {
   const inStock = item.stock !== false;
+  const hasImg  = item.image && item.image.trim() !== "";
+
   const card = document.createElement("div");
-  card.className = "product-card" + (inStock ? "" : " out-of-stock");
+  card.className = "product-card" + (inStock ? "" : " out-of-stock") + (hasImg ? " has-image" : "");
   card.id = `card-${item.id}`;
+
   card.innerHTML = `
+    ${hasImg ? `<div class="product-img-wrap"><img src="${item.image}" alt="${item.name}" class="product-img" loading="lazy"/>${!inStock ? '<div class="product-img-overlay">Indisponível</div>' : ''}</div>` : ""}
     <div class="product-info">
       <h3 class="product-name">${item.name}</h3>
       <p class="product-desc">${item.description || ""}</p>
@@ -114,6 +139,7 @@ function createProductCard(item) {
         <button class="btn-add" id="add-${item.id}" data-id="${item.id}" aria-label="Adicionar">Adicionar</button>
       ` : `<span class="badge-unavailable">Indisponível</span>`}
     </div>`;
+
   if (inStock) {
     card.querySelector(".btn-add").addEventListener("click", () => addToCart(item));
     card.querySelector(".qty-btn.plus").addEventListener("click", () => addToCart(item));
@@ -666,12 +692,15 @@ function setupEventListeners() {
       changeWrap.style.display = isDinheiro ? "flex" : "none";
 
       if (isDinheiro) {
-        // Enter em Dinheiro → foca campo de valor
         setTimeout(() => document.getElementById("customer-change").focus(), 50);
       } else {
         document.getElementById("customer-change").value = "";
         document.getElementById("change-hint").textContent = "";
         clearFieldError(document.getElementById("change-wrap"));
+        // Foca no botão finalizar após selecionar pagamento
+        if (!alreadySelected) {
+          setTimeout(() => document.getElementById("btn-finalizar").focus(), 60);
+        }
       }
 
       const wrap = btn.closest(".field-wrap");
@@ -698,6 +727,13 @@ function setupEventListeners() {
       } else if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         btn.click();
+        // Se não for dinheiro, foca direto no botão finalizar
+        setTimeout(() => {
+          const isDinheiro = btn.classList.contains("selected") && btn.dataset.value === "dinheiro";
+          if (!isDinheiro) {
+            document.getElementById("btn-finalizar").focus();
+          }
+        }, 60);
       }
     });
   });
