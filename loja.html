@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Central de Pedidos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+:root {
+  --green:     #22c55e; --green-dk: #16a34a; --green-lt: #f0fdf4;
+  --ink:       #0f172a; --ink-2:    #334155; --muted:    #64748b;
+  --subtle:    #94a3b8; --bg:       #f1f5f9; --surface:  #ffffff;
+  --surface-2: #f8fafc; --border:   #e2e8f0; --border-lt:#f1f5f9;
+  --danger:    #ef4444; --warn:     #f59e0b; --info:     #3b82f6;
+  --purple:    #6366f1; --teal:     #10b981;
+  --r-sm:8px; --r:12px; --r-lg:18px; --r-xl:24px;
+  --sh-xs:0 1px 3px rgba(0,0,0,0.06); --sh-sm:0 2px 8px rgba(0,0,0,0.08);
+  --sh-md:0 4px 20px rgba(0,0,0,0.1); --sh-xl:0 20px 60px rgba(0,0,0,0.18);
+  --font-d:'Plus Jakarta Sans',sans-serif; --font-b:'Inter',sans-serif;
+  --t:0.15s ease; --ease:cubic-bezier(0.32,0.72,0,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-b);background:var(--bg);color:var(--ink);min-height:100dvh;-webkit-font-smoothing:antialiased}
+
+/* LOGIN */
+.login-screen{min-height:100dvh;display:flex;align-items:center;justify-content:center;background:#0f172a;padding:24px}
+.login-box{width:100%;max-width:360px;background:#1e293b;border:1px solid rgba(255,255,255,0.07);border-radius:var(--r-xl);padding:36px 32px;display:flex;flex-direction:column;gap:20px}
+.login-logo{display:flex;align-items:center;gap:10px}
+.login-logo-icon{width:38px;height:38px;background:var(--green);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+.login-brand{font-family:var(--font-d);font-size:1rem;font-weight:800;color:#fff}
+.login-sub{font-size:0.68rem;color:rgba(255,255,255,0.35)}
+.login-title{font-family:var(--font-d);font-size:1.3rem;font-weight:800;color:#fff;letter-spacing:-0.02em}
+.login-field{display:flex;flex-direction:column;gap:5px}
+.login-field label{font-size:0.7rem;font-weight:600;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.07em}
+.login-field input{padding:10px 13px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:var(--r-sm);color:#fff;font-family:var(--font-b);font-size:0.88rem;outline:none;transition:border-color var(--t)}
+.login-field input:focus{border-color:var(--green)}
+.login-field input::placeholder{color:rgba(255,255,255,0.2)}
+.login-error{font-size:0.76rem;color:#f87171;display:none}
+.btn-login{width:100%;padding:12px;background:var(--green);color:#fff;border:none;border-radius:var(--r-sm);font-family:var(--font-d);font-size:0.9rem;font-weight:800;cursor:pointer;transition:background var(--t);box-shadow:0 4px 14px rgba(34,197,94,0.3)}
+.btn-login:hover{background:var(--green-dk)}
+
+/* LAYOUT */
+.app{display:none;min-height:100dvh;flex-direction:column}
+.app.visible{display:flex}
+
+/* TOPBAR */
+.topbar{background:#0f172a;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:100}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.topbar-logo{width:34px;height:34px;background:var(--green);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+.topbar-title{font-family:var(--font-d);font-size:0.95rem;font-weight:800;color:#fff}
+.topbar-store{font-size:0.7rem;color:rgba(255,255,255,0.4);margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.live-badge{display:flex;align-items:center;gap:5px;padding:5px 10px;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.25);border-radius:99px;font-family:var(--font-d);font-size:0.7rem;font-weight:700;color:var(--green)}
+.live-dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 1.5s ease infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.btn-logout-top{padding:6px 12px;border-radius:var(--r-sm);border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);font-family:var(--font-b);font-size:0.76rem;cursor:pointer;transition:all var(--t)}
+.btn-logout-top:hover{color:#f87171;border-color:rgba(239,68,68,0.3)}
+
+/* FILTROS DE STATUS */
+.status-tabs{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.status-tabs::-webkit-scrollbar{display:none}
+.status-tab{flex-shrink:0;display:flex;align-items:center;gap:5px;padding:6px 14px;border-radius:99px;border:1.5px solid var(--border);background:transparent;font-family:var(--font-d);font-size:0.76rem;font-weight:600;color:var(--muted);cursor:pointer;transition:all var(--t);white-space:nowrap}
+.status-tab:hover{border-color:var(--ink);color:var(--ink)}
+.status-tab.active{background:var(--ink);border-color:var(--ink);color:#fff}
+.tab-count{background:rgba(255,255,255,0.2);padding:1px 6px;border-radius:99px;font-size:0.66rem;font-weight:800}
+.status-tab:not(.active) .tab-count{background:var(--border);color:var(--muted)}
+
+/* CONTEÚDO */
+.content{flex:1;padding:20px;max-width:1100px;margin:0 auto;width:100%}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:20px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;box-shadow:var(--sh-xs)}
+.stat-label{font-size:0.67rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px}
+.stat-value{font-family:var(--font-d);font-size:1.5rem;font-weight:800;color:var(--ink);letter-spacing:-0.03em}
+.stat-sub{font-size:0.71rem;color:var(--muted);margin-top:3px}
+
+/* GRID DE PEDIDOS */
+.orders-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.orders-title{font-family:var(--font-d);font-size:0.88rem;font-weight:800;color:var(--ink)}
+.orders-count{font-size:0.75rem;color:var(--muted)}
+.orders-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+
+/* CARD DE PEDIDO */
+.order-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh-xs);transition:box-shadow var(--t),transform var(--t);display:flex;flex-direction:column}
+.order-card:hover{box-shadow:var(--sh-sm);transform:translateY(-1px)}
+.order-card.new-order{border-color:var(--purple);animation:newOrder 0.5s var(--ease)}
+@keyframes newOrder{0%{transform:scale(0.95);opacity:0}100%{transform:scale(1);opacity:1}}
+
+/* Status bar colorida no topo do card */
+.order-status-bar{height:4px;flex-shrink:0}
+
+.order-header{padding:12px 14px 10px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.order-num{font-family:var(--font-d);font-size:0.95rem;font-weight:800;color:var(--ink);letter-spacing:-0.01em}
+.order-time{font-size:0.7rem;color:var(--subtle);margin-top:2px}
+.order-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:99px;font-family:var(--font-d);font-size:0.67rem;font-weight:800;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap}
+
+.order-customer{padding:0 14px 10px;border-bottom:1px solid var(--border-lt)}
+.order-customer-name{font-family:var(--font-d);font-size:0.84rem;font-weight:700;color:var(--ink);margin-bottom:2px}
+.order-customer-phone{font-size:0.76rem;color:var(--muted)}
+.order-customer-addr{font-size:0.73rem;color:var(--muted);margin-top:2px;line-height:1.3}
+
+.order-items{padding:10px 14px;border-bottom:1px solid var(--border-lt);flex:1}
+.order-item-line{font-size:0.78rem;color:var(--ink-2);padding:2px 0}
+.order-item-line span{color:var(--muted)}
+
+.order-footer{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.order-total-wrap{}
+.order-total-label{font-size:0.66rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em}
+.order-total{font-family:var(--font-d);font-size:1rem;font-weight:800;color:var(--ink);letter-spacing:-0.02em}
+.order-fee{font-size:0.68rem;color:var(--muted);margin-top:1px}
+.order-payment{font-size:0.73rem;color:var(--muted);margin-top:1px}
+
+/* Ações do pedido */
+.order-actions{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.btn-action{display:flex;align-items:center;gap:4px;padding:7px 11px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface);font-family:var(--font-d);font-size:0.74rem;font-weight:700;cursor:pointer;transition:all var(--t);white-space:nowrap}
+.btn-action:hover{transform:translateY(-1px)}
+.btn-action.btn-next{background:var(--green);border-color:var(--green);color:#fff;box-shadow:0 2px 8px rgba(34,197,94,0.25)}
+.btn-action.btn-next:hover{background:var(--green-dk)}
+.btn-action.btn-cancel-order{color:var(--danger);border-color:var(--border)}
+.btn-action.btn-cancel-order:hover{border-color:var(--danger);background:#fef2f2}
+.btn-action.btn-whatsapp{color:#075e54;border-color:var(--border)}
+.btn-action.btn-whatsapp:hover{border-color:#25D366;background:var(--green-lt)}
+.btn-action.btn-payment{color:var(--info);border-color:var(--border)}
+.btn-action.btn-payment:hover{border-color:var(--info);background:#eff6ff}
+
+/* Empty state */
+.empty-orders{grid-column:1/-1;text-align:center;padding:60px 20px;display:flex;flex-direction:column;align-items:center;gap:8px}
+.empty-orders-icon{font-size:3rem;opacity:0.3;margin-bottom:4px}
+.empty-orders-title{font-family:var(--font-d);font-size:1rem;font-weight:700;color:var(--ink-2)}
+.empty-orders-sub{font-size:0.82rem;color:var(--muted)}
+
+/* MODAL ALTERAR PAGAMENTO */
+.modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,0.6);z-index:400;opacity:0;pointer-events:none;transition:opacity 0.25s ease;backdrop-filter:blur(4px)}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{position:fixed;z-index:500;background:var(--surface);border-radius:var(--r-xl);box-shadow:var(--sh-xl);width:calc(100% - 48px);max-width:400px;top:50%;left:50%;transform:translate(-50%,-48%) scale(0.96);opacity:0;transition:transform 0.28s var(--ease),opacity 0.28s ease;overflow:hidden}
+.modal.open{transform:translate(-50%,-50%) scale(1);opacity:1}
+.modal-header{padding:18px 22px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-family:var(--font-d);font-size:0.97rem;font-weight:800;color:var(--ink)}
+.modal-close{width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:var(--surface-2);cursor:pointer;color:var(--muted);font-size:0.72rem;display:flex;align-items:center;justify-content:center;transition:all var(--t)}
+.modal-close:hover{background:var(--border);color:var(--ink)}
+.modal-body{padding:18px 22px;display:flex;flex-direction:column;gap:14px}
+.modal-footer{padding:12px 22px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+
+.pay-grid-modal{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.pay-opt{display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 8px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface);font-family:var(--font-d);font-size:0.78rem;font-weight:600;color:var(--ink-2);cursor:pointer;transition:all var(--t)}
+.pay-opt:hover{border-color:var(--green);background:var(--green-lt);color:var(--green-dk)}
+.pay-opt.selected{background:var(--ink);border-color:var(--ink);color:#fff}
+.pay-icon{font-size:1.1rem}
+
+.form-field{display:flex;flex-direction:column;gap:5px}
+.form-field label{font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em}
+.prefix-input{display:flex;align-items:center;border:1.5px solid var(--border);border-radius:var(--r-sm);overflow:hidden;background:var(--surface);transition:border-color var(--t)}
+.prefix-input:focus-within{border-color:var(--green);box-shadow:0 0 0 3px rgba(34,197,94,0.1)}
+.prefix-input>span{padding:9px 11px;font-family:var(--font-d);font-size:0.82rem;font-weight:700;color:var(--muted);background:var(--surface-2);border-right:1.5px solid var(--border);flex-shrink:0}
+.prefix-input input{border:none!important;box-shadow:none!important;border-radius:0!important;padding:9px 11px;flex:1;font-family:var(--font-b);font-size:0.88rem;outline:none;color:var(--ink)}
+.change-result{font-size:0.78rem;font-weight:600;color:var(--green-dk);margin-top:2px;min-height:16px}
+
+.btn-save-pay{padding:9px 20px;border-radius:var(--r-sm);border:none;background:var(--green);color:#fff;font-family:var(--font-d);font-size:0.84rem;font-weight:800;cursor:pointer;transition:all var(--t)}
+.btn-save-pay:hover{background:var(--green-dk)}
+.btn-cancel-pay{padding:9px 16px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface);font-family:var(--font-d);font-size:0.84rem;font-weight:700;color:var(--ink-2);cursor:pointer;transition:all var(--t)}
+.btn-cancel-pay:hover{background:var(--surface-2)}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(12px);background:var(--ink);color:#fff;padding:10px 20px;border-radius:99px;font-family:var(--font-d);font-size:0.8rem;font-weight:600;z-index:9999;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;white-space:nowrap;box-shadow:var(--sh-md)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{background:var(--green-dk)}
+.toast.err{background:var(--danger)}
+
+@media(max-width:600px){
+  .orders-grid{grid-template-columns:1fr}
+  .stats-row{grid-template-columns:1fr 1fr}
+  .content{padding:14px}
+}
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-icon" id="login-icon">🍕</div>
+      <div><div class="login-brand">ZapPedido</div><div class="login-sub">Central da Loja</div></div>
+    </div>
+    <div class="login-title">Acesso restrito<br>à loja 🔐</div>
+    <div class="login-field">
+      <label>Senha</label>
+      <input type="password" id="login-pw" placeholder="Digite a senha da loja" />
+      <div class="login-error" id="login-err">Senha incorreta.</div>
+    </div>
+    <button class="btn-login" id="btn-login">Entrar</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="app">
+
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo" id="tb-logo">🍕</div>
+      <div><div class="topbar-title" id="tb-name">Central de Pedidos</div><div class="topbar-store" id="tb-store"></div></div>
+    </div>
+    <div class="topbar-right">
+      <div class="live-badge"><div class="live-dot"></div>AO VIVO</div>
+      <button class="btn-logout-top" id="btn-logout">Sair</button>
+    </div>
+  </div>
+
+  <div class="status-tabs" id="status-tabs">
+    <button class="status-tab active" data-status="all">Todos <span class="tab-count" id="count-all">0</span></button>
+    <button class="status-tab" data-status="received">📥 Recebidos <span class="tab-count" id="count-received">0</span></button>
+    <button class="status-tab" data-status="accepted">✅ Aceitos <span class="tab-count" id="count-accepted">0</span></button>
+    <button class="status-tab" data-status="preparing">👨‍🍳 Em preparo <span class="tab-count" id="count-preparing">0</span></button>
+    <button class="status-tab" data-status="delivering">🛵 Entregando <span class="tab-count" id="count-delivering">0</span></button>
+    <button class="status-tab" data-status="delivered">🎉 Entregues <span class="tab-count" id="count-delivered">0</span></button>
+  </div>
+
+  <div class="content">
+    <div class="stats-row" id="stats-row"></div>
+    <div class="orders-header">
+      <div><div class="orders-title" id="orders-title">Todos os pedidos</div><div class="orders-count" id="orders-count"></div></div>
+    </div>
+    <div class="orders-grid" id="orders-grid">
+      <div class="empty-orders"><div class="empty-orders-icon">📋</div><div class="empty-orders-title">Carregando pedidos...</div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL ALTERAR PAGAMENTO -->
+<div class="modal-overlay" id="pay-modal-overlay">
+  <div class="modal" id="pay-modal">
+    <div class="modal-header">
+      <div class="modal-title">💳 Alterar Pagamento</div>
+      <button class="modal-close" id="pay-modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="pay-order-id"/>
+      <input type="hidden" id="pay-order-total"/>
+      <div class="form-field">
+        <label>Nova forma de pagamento</label>
+        <div class="pay-grid-modal">
+          <button type="button" class="pay-opt" data-value="pix"><span class="pay-icon">💠</span>Pix</button>
+          <button type="button" class="pay-opt" data-value="credito"><span class="pay-icon">💳</span>Crédito</button>
+          <button type="button" class="pay-opt" data-value="debito"><span class="pay-icon">🏦</span>Débito</button>
+          <button type="button" class="pay-opt" data-value="dinheiro"><span class="pay-icon">💵</span>Dinheiro</button>
+        </div>
+      </div>
+      <div class="form-field" id="change-field" style="display:none">
+        <label>Troco para quanto?</label>
+        <div class="prefix-input">
+          <span>R$</span>
+          <input type="number" id="pay-change" placeholder="0,00" min="0" step="0.01"/>
+        </div>
+        <div class="change-result" id="pay-change-result"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel-pay" id="pay-modal-cancel">Cancelar</button>
+      <button class="btn-save-pay" id="pay-modal-save">Salvar alteração</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="config.js"></script>
+<script src="supabase.js"></script>
+<script>
+const LOJA_PASSWORD = "loja123"; // ← mude aqui
+const STORE_ID      = "default";
+
+let allOrders   = [];
+let activeFilter= "all";
+let realtimeEs  = null;
+
+// ── LOGIN ──────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("login-icon").textContent = CONFIG.store.logo || "🍕";
+  if (sessionStorage.getItem("zp_loja_auth") === "ok") showApp();
+  document.getElementById("btn-login").addEventListener("click", tryLogin);
+  document.getElementById("login-pw").addEventListener("keydown", e => { if(e.key==="Enter") tryLogin(); });
+});
+
+function tryLogin() {
+  const pw = document.getElementById("login-pw").value;
+  const err = document.getElementById("login-err");
+  if (pw === LOJA_PASSWORD) {
+    sessionStorage.setItem("zp_loja_auth","ok");
+    err.style.display = "none";
+    showApp();
+  } else {
+    err.style.display = "block";
+    document.getElementById("login-pw").value = "";
+  }
+}
+
+function showApp() {
+  document.getElementById("login-screen").style.display = "none";
+  document.getElementById("app").classList.add("visible");
+  document.getElementById("tb-logo").textContent  = CONFIG.store.logo || "🍕";
+  document.getElementById("tb-name").textContent  = "Central de Pedidos";
+  document.getElementById("tb-store").textContent = CONFIG.store.name;
+  setupApp();
+  loadOrders();
+  startRealtime();
+}
+
+// ── SETUP ──────────────────────────────────────────────────
+function setupApp() {
+  document.getElementById("btn-logout").addEventListener("click", () => {
+    sessionStorage.removeItem("zp_loja_auth");
+    if(realtimeEs) realtimeEs.close();
+    location.reload();
+  });
+
+  // Tabs de status
+  document.querySelectorAll(".status-tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".status-tab").forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      activeFilter = tab.dataset.status;
+      renderOrders();
+    });
+  });
+
+  // Modal pagamento
+  document.getElementById("pay-modal-close").addEventListener("click", closePayModal);
+  document.getElementById("pay-modal-cancel").addEventListener("click", closePayModal);
+  document.getElementById("pay-modal-overlay").addEventListener("click", e => { if(e.target.id==="pay-modal-overlay") closePayModal(); });
+  document.getElementById("pay-modal-save").addEventListener("click", savePayment);
+
+  document.querySelectorAll(".pay-opt").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".pay-opt").forEach(b => b.classList.remove("selected"));
+      btn.classList.add("selected");
+      const isDinheiro = btn.dataset.value === "dinheiro";
+      document.getElementById("change-field").style.display = isDinheiro ? "flex" : "none";
+      document.getElementById("pay-change").value = "";
+      document.getElementById("pay-change-result").textContent = "";
+    });
+  });
+
+  document.getElementById("pay-change").addEventListener("input", function() {
+    const total = parseFloat(document.getElementById("pay-order-total").value || "0");
+    const val   = parseFloat(this.value || "0");
+    const res   = document.getElementById("pay-change-result");
+    if (!val) { res.textContent = ""; return; }
+    if (val < total) { res.style.color = "#ef4444"; res.textContent = `⚠️ Insuficiente — faltam ${fmt(total-val)}`; }
+    else { res.style.color = "#16a34a"; res.textContent = val===total ? "✅ Valor exato" : `✅ Troco: ${fmt(val-total)}`; }
+  });
+}
+
+// ── DADOS ──────────────────────────────────────────────────
+async function loadOrders() {
+  try {
+    const data = await sb.select("orders",
+      `store_id=eq.${STORE_ID}&order=created_at.desc&limit=100`
+    );
+    allOrders = data;
+    renderAll();
+  } catch(e) {
+    showToast("Erro ao carregar pedidos","err");
+  }
+}
+
+function startRealtime() {
+  try {
+    realtimeEs = sb.subscribe("orders", (payload) => {
+      if (payload.type === "INSERT") {
+        const order = payload.record;
+        if (order.store_id === STORE_ID) {
+          allOrders.unshift(order);
+          renderAll();
+          notifyNewOrder(order);
+        }
+      }
+      if (payload.type === "UPDATE") {
+        const idx = allOrders.findIndex(o => o.id === payload.record.id);
+        if (idx >= 0) { allOrders[idx] = payload.record; renderAll(); }
+      }
+    });
+  } catch {}
+}
+
+function notifyNewOrder(order) {
+  if (Notification.permission === "granted") {
+    new Notification(`🛒 Novo pedido ${order.order_number}!`, {
+      body: `${order.customer_name || "Cliente"} — ${fmt(order.grand_total)}`,
+    });
+  } else if (Notification.permission !== "denied") {
+    Notification.requestPermission();
+  }
+  showToast(`🛒 Novo pedido ${order.order_number} chegou!`, "ok");
+}
+
+// ── RENDERIZAÇÃO ───────────────────────────────────────────
+function renderAll() {
+  updateCounts();
+  renderStats();
+  renderOrders();
+}
+
+function updateCounts() {
+  const counts = {};
+  ORDER_STATUS && Object.keys(ORDER_STATUS).forEach(s => counts[s] = 0);
+  allOrders.forEach(o => { if(counts[o.status]!==undefined) counts[o.status]++; });
+  document.getElementById("count-all").textContent      = allOrders.length;
+  document.getElementById("count-received").textContent  = counts.received   || 0;
+  document.getElementById("count-accepted").textContent  = counts.accepted   || 0;
+  document.getElementById("count-preparing").textContent = counts.preparing  || 0;
+  document.getElementById("count-delivering").textContent= counts.delivering || 0;
+  document.getElementById("count-delivered").textContent = counts.delivered  || 0;
+}
+
+function renderStats() {
+  const today    = new Date().toDateString();
+  const todayOrd = allOrders.filter(o => new Date(o.created_at).toDateString() === today);
+  const todayRev = todayOrd.reduce((s,o) => s + (o.grand_total||0), 0);
+  const pending  = allOrders.filter(o => !["delivered","cancelled"].includes(o.status));
+
+  document.getElementById("stats-row").innerHTML = `
+    <div class="stat-card"><div class="stat-label">Pedidos hoje</div><div class="stat-value">${todayOrd.length}</div><div class="stat-sub">desde meia-noite</div></div>
+    <div class="stat-card"><div class="stat-label">Faturamento hoje</div><div class="stat-value">${fmt(todayRev)}</div><div class="stat-sub">pedidos entregues</div></div>
+    <div class="stat-card"><div class="stat-label">Em andamento</div><div class="stat-value">${pending.length}</div><div class="stat-sub">aguardando ação</div></div>
+    <div class="stat-card"><div class="stat-label">Total pedidos</div><div class="stat-value">${allOrders.length}</div><div class="stat-sub">todos os registros</div></div>
+  `;
+}
+
+function renderOrders() {
+  const filtered = activeFilter === "all"
+    ? allOrders
+    : allOrders.filter(o => o.status === activeFilter);
+
+  const titleMap = { all:"Todos os pedidos", received:"Recebidos", accepted:"Aceitos", preparing:"Em preparo", delivering:"Saindo para entrega", delivered:"Entregues" };
+  document.getElementById("orders-title").textContent = titleMap[activeFilter] || "Pedidos";
+  document.getElementById("orders-count").textContent = `${filtered.length} pedido${filtered.length!==1?"s":""}`;
+
+  if (filtered.length === 0) {
+    document.getElementById("orders-grid").innerHTML = `
+      <div class="empty-orders">
+        <div class="empty-orders-icon">📋</div>
+        <div class="empty-orders-title">${activeFilter==="all" ? "Nenhum pedido ainda" : "Nenhum pedido nesta etapa"}</div>
+        <div class="empty-orders-sub">${activeFilter==="all" ? "Os pedidos aparecerão aqui automaticamente" : "Os pedidos aparecerão quando avançarem para esta etapa"}</div>
+      </div>`;
+    return;
+  }
+
+  document.getElementById("orders-grid").innerHTML = filtered.map(order => renderOrderCard(order)).join("");
+}
+
+function renderOrderCard(order) {
+  const st      = ORDER_STATUS[order.status] || ORDER_STATUS.received;
+  const items   = Array.isArray(order.items) ? order.items : [];
+  const nextSt  = STATUS_FLOW[STATUS_FLOW.indexOf(order.status)+1];
+  const nextInfo= nextSt ? ORDER_STATUS[nextSt] : null;
+  const time    = timeAgo(order.created_at);
+  const isDone  = ["delivered","cancelled"].includes(order.status);
+
+  const payLabels = {pix:"Pix",credito:"Crédito",debito:"Débito",dinheiro:"Dinheiro"};
+
+  return `
+  <div class="order-card ${order._new ? "new-order" : ""}" id="oc-${order.id}">
+    <div class="order-status-bar" style="background:${st.color}"></div>
+    <div class="order-header">
+      <div>
+        <div class="order-num">Pedido ${order.order_number}</div>
+        <div class="order-time">${time}</div>
+      </div>
+      <span class="order-badge" style="background:${st.color}18;color:${st.color}">${st.emoji} ${st.label}</span>
+    </div>
+    <div class="order-customer">
+      <div class="order-customer-name">${order.customer_name || "Cliente não identificado"}</div>
+      ${order.customer_phone ? `<div class="order-customer-phone">📱 ${order.customer_phone}</div>` : ""}
+      ${order.customer_address ? `<div class="order-customer-addr">📍 ${order.customer_address}</div>` : ""}
+    </div>
+    <div class="order-items">
+      ${items.map(i => `<div class="order-item-line"><span>${i.quantity}×</span> ${i.name} <span>— ${fmt(i.price * i.quantity)}</span></div>`).join("")}
+    </div>
+    <div class="order-footer">
+      <div class="order-total-wrap">
+        <div class="order-total-label">Total</div>
+        <div class="order-total">${fmt(order.grand_total)}</div>
+        ${order.delivery_fee > 0 ? `<div class="order-fee">🛵 Entrega: ${fmt(order.delivery_fee)}</div>` : ""}
+        <div class="order-payment">💳 ${payLabels[order.payment_method] || order.payment_method || "—"}${order.payment_change ? ` · troco p/ ${fmt(order.payment_change)}` : ""}</div>
+      </div>
+      <div class="order-actions">
+        ${!isDone && order.customer_phone ? `
+          <button class="btn-action btn-whatsapp" onclick="sendWhatsApp('${order.id}')">📲 Notificar</button>
+        ` : ""}
+        ${!isDone ? `
+          <button class="btn-action btn-payment" onclick="openPayModal('${order.id}','${order.grand_total}')">💳 Pagamento</button>
+        ` : ""}
+        ${nextInfo ? `
+          <button class="btn-action btn-next" onclick="advanceStatus('${order.id}','${nextSt}')">
+            ${nextInfo.emoji} ${nextInfo.label}
+          </button>
+        ` : ""}
+        ${!isDone ? `
+          <button class="btn-action btn-cancel-order" onclick="cancelOrder('${order.id}')">✕ Cancelar</button>
+        ` : ""}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── AÇÕES ──────────────────────────────────────────────────
+async function advanceStatus(id, newStatus) {
+  const order = allOrders.find(o => o.id === id);
+  if (!order) return;
+
+  const history = [...(order.status_history||[]), {
+    from: order.status, to: newStatus, at: new Date().toISOString()
+  }];
+
+  try {
+    await sb.update("orders", id, { status: newStatus, status_history: history });
+    order.status = newStatus;
+    order.status_history = history;
+    renderAll();
+    showToast(`${ORDER_STATUS[newStatus].emoji} Pedido atualizado: ${ORDER_STATUS[newStatus].label}`, "ok");
+  } catch {
+    showToast("Erro ao atualizar pedido","err");
+  }
+}
+
+async function cancelOrder(id) {
+  if (!confirm("Cancelar este pedido?")) return;
+  await advanceStatus(id, "cancelled");
+}
+
+function sendWhatsApp(id) {
+  const order = allOrders.find(o => o.id === id);
+  if (!order || !order.customer_phone) return;
+  const phone   = order.customer_phone.replace(/\D/g,"");
+  const msgFn   = STATUS_MESSAGES[order.status];
+  const msg     = msgFn ? msgFn(order.order_number, CONFIG.store.name) : `Atualização do seu pedido ${order.order_number}.`;
+  const fullPhone = phone.startsWith("55") ? phone : `55${phone}`;
+  window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`, "_blank");
+}
+
+// ── MODAL PAGAMENTO ────────────────────────────────────────
+function openPayModal(id, total) {
+  document.getElementById("pay-order-id").value    = id;
+  document.getElementById("pay-order-total").value  = total;
+  document.querySelectorAll(".pay-opt").forEach(b => b.classList.remove("selected"));
+  document.getElementById("change-field").style.display = "none";
+  document.getElementById("pay-change").value = "";
+  document.getElementById("pay-change-result").textContent = "";
+
+  const order = allOrders.find(o => o.id === id);
+  if (order?.payment_method) {
+    document.querySelector(`.pay-opt[data-value="${order.payment_method}"]`)?.classList.add("selected");
+    if (order.payment_method === "dinheiro") {
+      document.getElementById("change-field").style.display = "flex";
+      document.getElementById("pay-change").value = order.payment_change || "";
+    }
+  }
+
+  document.getElementById("pay-modal-overlay").classList.add("open");
+  document.getElementById("pay-modal").classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+
+function closePayModal() {
+  document.getElementById("pay-modal-overlay").classList.remove("open");
+  document.getElementById("pay-modal").classList.remove("open");
+  document.body.style.overflow = "";
+}
+
+async function savePayment() {
+  const id      = document.getElementById("pay-order-id").value;
+  const total   = parseFloat(document.getElementById("pay-order-total").value||"0");
+  const selBtn  = document.querySelector(".pay-opt.selected");
+  if (!selBtn) { showToast("⚠️ Selecione a forma de pagamento","err"); return; }
+
+  const method  = selBtn.dataset.value;
+  const change  = method === "dinheiro" ? parseFloat(document.getElementById("pay-change").value||"0") : null;
+
+  if (method === "dinheiro" && change && change < total) {
+    showToast("⚠️ Valor insuficiente para troco","err"); return;
+  }
+
+  try {
+    await sb.update("orders", id, { payment_method: method, payment_change: change });
+    const order = allOrders.find(o => o.id === id);
+    if (order) { order.payment_method = method; order.payment_change = change; }
+    closePayModal();
+    renderOrders();
+    showToast("💳 Pagamento atualizado!", "ok");
+  } catch {
+    showToast("Erro ao atualizar pagamento","err");
+  }
+}
+
+// ── UTILS ──────────────────────────────────────────────────
+function fmt(v) { return Number(v).toLocaleString("pt-BR",{style:"currency",currency:"BRL"}); }
+
+function timeAgo(iso) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff/60000);
+  if (m < 1)  return "agora mesmo";
+  if (m < 60) return `há ${m} min`;
+  const h = Math.floor(m/60);
+  if (h < 24) return `há ${h}h`;
+  return `há ${Math.floor(h/24)}d`;
+}
+
+function showToast(msg, type="") {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = `toast${type?" "+type:""} show`;
+  setTimeout(()=>t.classList.remove("show"), 3000);
+}
+
+document.addEventListener("keydown", e => {
+  if (e.key==="Escape") closePayModal();
+});
+</script>
+</body>
+</html>
