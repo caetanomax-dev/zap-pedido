@@ -640,7 +640,65 @@ body {
   .products-grid { grid-template-columns: 1fr; }
   .stats-grid { grid-template-columns: 1fr 1fr; }
   .app.visible { flex-direction: column; }
+  .settings-grid { grid-template-columns: 1fr; }
 }
+
+/* ── CONFIGURAÇÕES ─────────────────────────────────────────── */
+.settings-section {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 20px 22px;
+  margin-bottom: 14px; box-shadow: var(--sh-xs);
+}
+.settings-section-title {
+  font-family: var(--font-d); font-size: 0.88rem; font-weight: 800;
+  color: var(--ink); margin-bottom: 16px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-lt);
+}
+.settings-section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-lt);
+}
+.settings-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 14px;
+}
+.logo-input-wrap { display: flex; align-items: center; gap: 12px; }
+.logo-preview {
+  width: 48px; height: 48px; border-radius: var(--r-sm);
+  background: var(--ink); border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; flex-shrink: 0; overflow: hidden;
+}
+.prefix-input-cfg {
+  display: flex; align-items: center;
+  border: 1.5px solid var(--border); border-radius: var(--r-sm);
+  overflow: hidden; background: var(--surface); transition: border-color var(--t);
+}
+.prefix-input-cfg:focus-within { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(34,197,94,0.1); }
+.prefix-input-cfg > span { padding: 9px 11px; background: var(--surface-2); border-right: 1.5px solid var(--border); flex-shrink: 0; }
+.prefix-input-cfg input { border:none!important; box-shadow:none!important; border-radius:0!important; padding:9px 11px; flex:1; font-family:var(--font-b); font-size:0.88rem; outline:none; color:var(--ink); }
+.color-input-wrap { display: flex; align-items: center; gap: 8px; }
+.color-input-wrap input[type="color"] { width:36px; height:36px; border:1.5px solid var(--border); border-radius:var(--r-sm); cursor:pointer; padding:2px; background:var(--surface); flex-shrink:0; }
+.color-input-wrap input[type="text"] { flex:1; padding:8px 11px; border:1.5px solid var(--border); border-radius:var(--r-sm); font-family:var(--font-b); font-size:0.88rem; background:var(--surface); color:var(--ink); outline:none; transition:border-color var(--t); }
+.color-input-wrap input[type="text"]:focus { border-color:var(--brand); }
+.color-dot { width:22px; height:22px; border-radius:50%; border:2px solid rgba(0,0,0,0.1); flex-shrink:0; transition:background 0.2s; }
+.cfg-preview-bar { border-radius:var(--r-sm); border:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:10px 14px; }
+.cfg-preview-header { display:flex; align-items:center; gap:8px; font-family:var(--font-d); font-size:0.88rem; font-weight:800; color:#fff; }
+.cfg-preview-btn { padding:6px 14px; border-radius:6px; border:none; font-family:var(--font-d); font-size:0.76rem; font-weight:700; color:#fff; cursor:default; }
+.user-item { display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--border-lt); }
+.user-item:last-child { border-bottom:none; }
+.user-avatar { width:34px; height:34px; border-radius:50%; background:var(--ink); color:#fff; display:flex; align-items:center; justify-content:center; font-family:var(--font-d); font-size:0.8rem; font-weight:800; flex-shrink:0; }
+.user-info { flex:1; min-width:0; }
+.user-name { font-family:var(--font-d); font-size:0.86rem; font-weight:700; color:var(--ink); }
+.user-role-badge { display:inline-flex; padding:2px 8px; border-radius:99px; font-size:0.65rem; font-weight:700; margin-top:2px; text-transform:uppercase; letter-spacing:0.05em; }
+.role-owner    { background:#fef3c7; color:#92400e; }
+.role-manager  { background:#ede9fe; color:#5b21b6; }
+.role-operator { background:var(--surface-2); color:var(--muted); }
+.settings-save-bar { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 18px; background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); margin-bottom:20px; position:sticky; bottom:16px; box-shadow:var(--sh-md); }
+.settings-save-info { font-size:0.77rem; color:var(--muted); }
+.btn-save-settings { padding:10px 22px; border-radius:var(--r-sm); border:none; background:var(--brand); color:#fff; font-family:var(--font-d); font-size:0.86rem; font-weight:800; cursor:pointer; white-space:nowrap; transition:all var(--t); }
+.btn-save-settings:hover { background:var(--brand-dk); transform:translateY(-1px); }
   </style>
 </head>
 <body>
@@ -699,6 +757,10 @@ body {
       </button>
       <button class="nav-item" data-page="delivery">
         <span class="nav-icon">🛵</span> Taxas de Entrega
+      </button>
+      <div class="nav-section-label">Sistema</div>
+      <button class="nav-item" data-page="settings">
+        <span class="nav-icon">⚙️</span> Configurações
       </button>
     </div>
 
@@ -791,6 +853,119 @@ body {
 
       <div class="cat-list" id="delivery-zones-list"></div>
     </div>
+
+    <!-- ── CONFIGURAÇÕES ── -->
+    <div class="page" id="page-settings">
+
+      <div class="settings-section">
+        <div class="settings-section-title">🏪 Dados da Loja</div>
+        <div class="settings-grid">
+          <div class="form-field">
+            <label>Nome da loja *</label>
+            <input type="text" id="cfg-name" placeholder="Ex: Pizzaria Bella Napoli" />
+          </div>
+          <div class="form-field">
+            <label>Slogan / Subtítulo</label>
+            <input type="text" id="cfg-tagline" placeholder="Ex: A melhor pizza da cidade" />
+          </div>
+          <div class="form-field">
+            <label>Logo da loja</label>
+            <div class="logo-input-wrap">
+              <div class="logo-preview" id="cfg-logo-preview">🍕</div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+                <input type="text" id="cfg-logo" placeholder="Emoji (🍕) ou URL da imagem" />
+                <span style="font-size:0.71rem;color:var(--muted)">Use um emoji simples ou cole o link de uma imagem</span>
+              </div>
+            </div>
+          </div>
+          <div class="form-field">
+            <label>WhatsApp da loja *</label>
+            <div class="prefix-input-cfg">
+              <span>📱</span>
+              <input type="text" id="cfg-whatsapp" placeholder="5511999999999" maxlength="14" inputmode="numeric"/>
+            </div>
+            <span style="font-size:0.71rem;color:var(--muted)">Formato: 55 + DDD + número. Ex: 5511987654321</span>
+          </div>
+          <div class="form-field">
+            <label>Tempo médio de resposta</label>
+            <input type="text" id="cfg-response-time" placeholder="Ex: 30 minutos" />
+            <span style="font-size:0.71rem;color:var(--muted)">Aparece na tela de confirmação do pedido</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">🎨 Aparência</div>
+        <div class="settings-grid">
+          <div class="form-field">
+            <label>Cor principal</label>
+            <div class="color-input-wrap">
+              <input type="color" id="cfg-primary-color" value="#22c55e" />
+              <input type="text" id="cfg-primary-hex" placeholder="#22c55e" maxlength="7" />
+              <span class="color-dot" id="cfg-primary-dot" style="background:#22c55e"></span>
+            </div>
+            <span style="font-size:0.71rem;color:var(--muted)">Cor dos botões e destaques</span>
+          </div>
+          <div class="form-field">
+            <label>Cor do cabeçalho</label>
+            <div class="color-input-wrap">
+              <input type="color" id="cfg-header-color" value="#0f172a" />
+              <input type="text" id="cfg-header-hex" placeholder="#0f172a" maxlength="7" />
+              <span class="color-dot" id="cfg-header-dot" style="background:#0f172a"></span>
+            </div>
+            <span style="font-size:0.71rem;color:var(--muted)">Cor da barra do topo</span>
+          </div>
+          <div class="form-field">
+            <label>Cor de destaque</label>
+            <div class="color-input-wrap">
+              <input type="color" id="cfg-accent-color" value="#16a34a" />
+              <input type="text" id="cfg-accent-hex" placeholder="#16a34a" maxlength="7" />
+              <span class="color-dot" id="cfg-accent-dot" style="background:#16a34a"></span>
+            </div>
+            <span style="font-size:0.71rem;color:var(--muted)">Preços e textos de destaque</span>
+          </div>
+        </div>
+        <!-- Preview ao vivo -->
+        <div style="margin-top:14px">
+          <div style="font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Preview ao vivo</div>
+          <div class="cfg-preview-bar">
+            <div class="cfg-preview-header" id="cfg-preview-header">
+              <span id="cfg-preview-logo">🍕</span>
+              <span id="cfg-preview-name">Nome da Loja</span>
+            </div>
+            <button class="cfg-preview-btn" id="cfg-preview-btn">Adicionar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">💬 Mensagens do Pedido</div>
+        <div class="settings-grid">
+          <div class="form-field">
+            <label>Saudação inicial</label>
+            <input type="text" id="cfg-greeting" placeholder="Olá! Gostaria de fazer um pedido:" />
+          </div>
+          <div class="form-field">
+            <label>Rodapé da mensagem</label>
+            <input type="text" id="cfg-footer-msg" placeholder="Aguardo confirmação. Obrigado! 😊" />
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section" id="settings-users-section">
+        <div class="settings-section-header">
+          <div class="settings-section-title">👥 Usuários e Acessos</div>
+          <button class="btn-primary" id="btn-add-user">+ Novo usuário</button>
+        </div>
+        <div id="users-list"></div>
+      </div>
+
+      <div class="settings-save-bar">
+        <span class="settings-save-info">As alterações são salvas neste navegador e aplicadas ao cardápio</span>
+        <button class="btn-save-settings" id="btn-save-settings">💾 Salvar configurações</button>
+      </div>
+
+    </div><!-- /page-settings -->
 
   </div><!-- /content -->
 </div><!-- /app -->
@@ -1194,13 +1369,15 @@ function closeSidebar() {
 }
 
 // ── NAVEGAÇÃO ─────────────────────────────────────────────────
-const DELIVERY_KEY = "zp_delivery_data";
+const DELIVERY_KEY  = "zp_delivery_data";
+const SETTINGS_KEY  = "zp_settings_data";
 
 const pageConfig = {
-  dashboard:  { title: "Visão Geral",         sub: "Resumo do seu cardápio",      action: false },
-  products:   { title: "Produtos",            sub: "Gerencie seus itens",         action: true  },
-  categories: { title: "Categorias",          sub: "Organize seu cardápio",       action: false },
-  delivery:   { title: "Taxas de Entrega",    sub: "Configure por região",        action: false },
+  dashboard:  { title: "Visão Geral",      sub: "Resumo do seu cardápio",   action: false },
+  products:   { title: "Produtos",         sub: "Gerencie seus itens",      action: true  },
+  categories: { title: "Categorias",       sub: "Organize seu cardápio",    action: false },
+  delivery:   { title: "Taxas de Entrega", sub: "Configure por região",     action: false },
+  settings:   { title: "Configurações",    sub: "Loja, aparência e acesso", action: false },
 };
 
 function navigateTo(page) {
@@ -1223,6 +1400,7 @@ function navigateTo(page) {
   if (page === "products")   renderProducts();
   if (page === "categories") renderCategories();
   if (page === "delivery")   renderDelivery();
+  if (page === "settings")   renderSettings();
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────
@@ -1681,6 +1859,258 @@ function confirmDeleteZone(idx) {
     showToast(null, "Região excluída.", "error");
   };
   openOverlay("confirm-modal-overlay", "confirm-modal");
+}
+
+// ── CONFIGURAÇÕES ─────────────────────────────────────────────
+
+function loadSettings() {
+  const saved = localStorage.getItem(SETTINGS_KEY);
+  return saved ? JSON.parse(saved) : {
+    store: {
+      name:         CONFIG.store.name,
+      tagline:      CONFIG.store.tagline || "",
+      logo:         CONFIG.store.logo || "🍕",
+      whatsapp:     CONFIG.store.whatsappNumber || "",
+      responseTime: CONFIG.store.responseTime || "",
+    },
+    appearance: {
+      primaryColor: CONFIG.appearance?.primaryColor || "#22c55e",
+      headerColor:  CONFIG.appearance?.headerColor  || "#0f172a",
+      accentColor:  CONFIG.appearance?.accentColor  || "#16a34a",
+    },
+    messages: {
+      greeting: CONFIG.order?.greeting || "Olá! Gostaria de fazer um pedido:",
+      footer:   CONFIG.order?.footer   || "Aguardo confirmação. Obrigado! 😊",
+    },
+    users: JSON.parse(JSON.stringify(USERS)),
+  };
+}
+
+function saveSettings(cfg) {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(cfg));
+  // Aplica imediatamente às variáveis CSS
+  const ap = cfg.appearance;
+  document.documentElement.style.setProperty("--brand",    ap.primaryColor);
+  document.documentElement.style.setProperty("--brand-dk", ap.accentColor);
+  // Atualiza sidebar
+  const logo = cfg.store.logo;
+  const logoEl = document.getElementById("sb-logo");
+  if (logo.startsWith("http") || logo.endsWith(".png") || logo.endsWith(".jpg") || logo.endsWith(".svg")) {
+    logoEl.innerHTML = `<img src="${logo}" style="width:22px;height:22px;border-radius:3px;object-fit:cover"/>`;
+  } else {
+    logoEl.textContent = logo;
+  }
+  document.getElementById("sb-store").textContent = cfg.store.name;
+}
+
+function renderSettings() {
+  const cfg = loadSettings();
+  const canManageUsers = can("users");
+
+  // Preenche campos
+  document.getElementById("cfg-name").value         = cfg.store.name;
+  document.getElementById("cfg-tagline").value       = cfg.store.tagline;
+  document.getElementById("cfg-logo").value          = cfg.store.logo;
+  document.getElementById("cfg-whatsapp").value      = cfg.store.whatsapp;
+  document.getElementById("cfg-response-time").value = cfg.store.responseTime;
+  document.getElementById("cfg-greeting").value      = cfg.messages.greeting;
+  document.getElementById("cfg-footer-msg").value    = cfg.messages.footer;
+
+  // Cores
+  setColorField("cfg-primary", cfg.appearance.primaryColor);
+  setColorField("cfg-header",  cfg.appearance.headerColor);
+  setColorField("cfg-accent",  cfg.appearance.accentColor);
+
+  // Preview inicial
+  updateSettingsPreview();
+
+  // Usuários
+  document.getElementById("settings-users-section").style.display = canManageUsers ? "block" : "none";
+  renderUsersList(cfg.users);
+
+  // Listeners de cor
+  ["cfg-primary","cfg-header","cfg-accent"].forEach(id => {
+    document.getElementById(`${id}-color`).addEventListener("input", function() {
+      document.getElementById(`${id}-hex`).value = this.value;
+      document.getElementById(`${id}-dot`).style.background = this.value;
+      updateSettingsPreview();
+    });
+    document.getElementById(`${id}-hex`).addEventListener("input", function() {
+      if (/^#[0-9a-fA-F]{6}$/.test(this.value)) {
+        document.getElementById(`${id}-color`).value = this.value;
+        document.getElementById(`${id}-dot`).style.background = this.value;
+        updateSettingsPreview();
+      }
+    });
+  });
+
+  // Listener logo preview
+  document.getElementById("cfg-logo").addEventListener("input", function() {
+    updateLogoPreview(this.value.trim());
+    updateSettingsPreview();
+  });
+
+  // Botão salvar
+  document.getElementById("btn-save-settings").onclick = () => {
+    const newCfg = {
+      store: {
+        name:         document.getElementById("cfg-name").value.trim(),
+        tagline:      document.getElementById("cfg-tagline").value.trim(),
+        logo:         document.getElementById("cfg-logo").value.trim(),
+        whatsapp:     document.getElementById("cfg-whatsapp").value.trim(),
+        responseTime: document.getElementById("cfg-response-time").value.trim(),
+      },
+      appearance: {
+        primaryColor: document.getElementById("cfg-primary-color").value,
+        headerColor:  document.getElementById("cfg-header-color").value,
+        accentColor:  document.getElementById("cfg-accent-color").value,
+      },
+      messages: {
+        greeting: document.getElementById("cfg-greeting").value.trim(),
+        footer:   document.getElementById("cfg-footer-msg").value.trim(),
+      },
+      users: cfg.users,
+    };
+
+    if (!newCfg.store.name)     { showToast(null,"⚠️ Informe o nome da loja"); return; }
+    if (!newCfg.store.whatsapp) { showToast(null,"⚠️ Informe o WhatsApp da loja"); return; }
+
+    saveSettings(newCfg);
+    showToast(null, "✅ Configurações salvas! Atualize o cardápio para aplicar.", "success");
+  };
+
+  // Botão novo usuário
+  if (canManageUsers) {
+    document.getElementById("btn-add-user").onclick = () => openUserModal();
+  }
+
+  // Carrega logo preview inicial
+  updateLogoPreview(cfg.store.logo);
+}
+
+function setColorField(id, value) {
+  document.getElementById(`${id}-color`).value = value;
+  document.getElementById(`${id}-hex`).value   = value;
+  document.getElementById(`${id}-dot`).style.background = value;
+}
+
+function updateLogoPreview(logo) {
+  const el = document.getElementById("cfg-logo-preview");
+  if (logo.startsWith("http") || logo.endsWith(".png") || logo.endsWith(".jpg") || logo.endsWith(".svg")) {
+    el.innerHTML = `<img src="${logo}" style="width:32px;height:32px;border-radius:4px;object-fit:cover" onerror="this.parentElement.textContent='🍕'"/>`;
+  } else {
+    el.textContent = logo || "🍕";
+  }
+}
+
+function updateSettingsPreview() {
+  const primary = document.getElementById("cfg-primary-color")?.value || "#22c55e";
+  const header  = document.getElementById("cfg-header-color")?.value  || "#0f172a";
+  const name    = document.getElementById("cfg-name")?.value          || "Nome da Loja";
+  const logo    = document.getElementById("cfg-logo")?.value          || "🍕";
+
+  const bar = document.getElementById("cfg-preview-bar");
+  const btn = document.getElementById("cfg-preview-btn");
+  const hdr = document.getElementById("cfg-preview-header");
+  const logoEl = document.getElementById("cfg-preview-logo");
+  if (!bar) return;
+
+  bar.style.background  = header;
+  btn.style.background  = primary;
+  document.getElementById("cfg-preview-name").textContent = name;
+  logoEl.textContent = logo.startsWith("http") ? "" : (logo || "🍕");
+}
+
+// ── USUÁRIOS ──────────────────────────────────────────────────
+function renderUsersList(users) {
+  const roleLabel = { owner:"Proprietário 👑", manager:"Gerente", operator:"Atendente" };
+  const roleClass = { owner:"role-owner", manager:"role-manager", operator:"role-operator" };
+  const el = document.getElementById("users-list");
+  if (!el) return;
+
+  el.innerHTML = users.map((u, idx) => `
+    <div class="user-item">
+      <div class="user-avatar">${u.name.charAt(0).toUpperCase()}</div>
+      <div class="user-info">
+        <div class="user-name">${u.name}</div>
+        <span class="user-role-badge ${roleClass[u.role] || ''}">${roleLabel[u.role] || u.role}</span>
+      </div>
+      <div style="display:flex;gap:5px">
+        <button class="pac-btn btn-edit" title="Editar" onclick="openUserModal(${idx})">✏️</button>
+        ${users.length > 1 ? `<button class="pac-btn btn-delete" title="Excluir" onclick="removeUser(${idx})">🗑️</button>` : ""}
+      </div>
+    </div>`).join("") || `<div style="color:var(--muted);font-size:0.82rem;padding:12px 0">Nenhum usuário cadastrado.</div>`;
+}
+
+function openUserModal(idx = null) {
+  const cfg   = loadSettings();
+  const user  = idx !== null ? cfg.users[idx] : null;
+  const title = user ? "Editar Usuário" : "Novo Usuário";
+
+  // Reutiliza o modal de categoria com campos customizados
+  document.getElementById("cat-modal-title").textContent = title;
+  document.getElementById("edit-cat-original").value = idx !== null ? String(idx) : "";
+  document.getElementById("edit-cat-emoji").value    = "";
+  document.getElementById("edit-cat-name").value     = "";
+
+  // Substitui conteúdo do modal temporariamente
+  const body = document.querySelector("#cat-modal .modal-body");
+  body.innerHTML = `
+    <input type="hidden" id="user-modal-idx" value="${idx !== null ? idx : ''}" />
+    <div class="form-field" style="margin-bottom:12px">
+      <label>Nome *</label>
+      <input type="text" id="user-name-input" placeholder="Ex: Maria, Gerente João" value="${user?.name||''}" />
+    </div>
+    <div class="form-field" style="margin-bottom:12px">
+      <label>Senha *</label>
+      <input type="password" id="user-pw-input" placeholder="${user ? "Deixe vazio para não alterar" : "Mínimo 6 caracteres"}" />
+    </div>
+    <div class="form-field">
+      <label>Nível de acesso</label>
+      <select id="user-role-input" style="padding:9px 11px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-family:var(--font-b);font-size:0.88rem;background:var(--surface);color:var(--ink);outline:none;width:100%">
+        <option value="owner"    ${user?.role==='owner'    ?'selected':''}>Proprietário — acesso total</option>
+        <option value="manager"  ${user?.role==='manager'  ?'selected':''}>Gerente — produtos e entregas</option>
+        <option value="operator" ${user?.role==='operator' ?'selected':''}>Atendente — somente visualizar</option>
+      </select>
+    </div>`;
+
+  document.getElementById("cat-modal-save").onclick = () => saveUserFromModal();
+  openOverlay("cat-modal-overlay","cat-modal");
+  setTimeout(() => document.getElementById("user-name-input")?.focus(), 150);
+}
+
+function saveUserFromModal() {
+  const cfg   = loadSettings();
+  const idx   = document.getElementById("user-modal-idx").value;
+  const name  = document.getElementById("user-name-input").value.trim();
+  const pw    = document.getElementById("user-pw-input").value;
+  const role  = document.getElementById("user-role-input").value;
+
+  if (!name) { showToast(null,"⚠️ Informe o nome do usuário"); return; }
+  if (!idx && pw.length < 6) { showToast(null,"⚠️ Senha deve ter ao menos 6 caracteres"); return; }
+
+  if (idx !== "") {
+    cfg.users[parseInt(idx)].name = name;
+    cfg.users[parseInt(idx)].role = role;
+    if (pw) cfg.users[parseInt(idx)].password = pw;
+  } else {
+    if (!pw) { showToast(null,"⚠️ Informe uma senha"); return; }
+    cfg.users.push({ name, password: pw, role });
+  }
+
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(cfg));
+  closeCatModal();
+  renderUsersList(cfg.users);
+  showToast(null,"✅ Usuário salvo!", "success");
+}
+
+function removeUser(idx) {
+  const cfg = loadSettings();
+  if (cfg.users.length <= 1) { showToast(null,"⚠️ Precisa ter ao menos 1 usuário"); return; }
+  cfg.users.splice(idx, 1);
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(cfg));
+  renderUsersList(cfg.users);
+  showToast(null,"Usuário removido.","error");
 }
 
 function closeConfirmModal() { closeOverlay("confirm-modal-overlay", "confirm-modal"); }
