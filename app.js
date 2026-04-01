@@ -18,6 +18,23 @@ function getNextOrderNumber() {
 
 // ─── INICIALIZAÇÃO ────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
+  // Carrega configurações salvas pelo painel admin
+  const savedSettings = localStorage.getItem("zp_settings_data");
+  if (savedSettings) {
+    try {
+      const cfg = JSON.parse(savedSettings);
+      if (cfg.store) {
+        if (cfg.store.name)         CONFIG.store.name           = cfg.store.name;
+        if (cfg.store.tagline)      CONFIG.store.tagline        = cfg.store.tagline;
+        if (cfg.store.logo)         CONFIG.store.logo           = cfg.store.logo;
+        if (cfg.store.whatsapp)     CONFIG.store.whatsappNumber = cfg.store.whatsapp;
+        if (cfg.store.responseTime) CONFIG.store.responseTime   = cfg.store.responseTime;
+      }
+      if (cfg.appearance) CONFIG.appearance = cfg.appearance;
+      if (cfg.messages)   CONFIG.order      = { greeting: cfg.messages.greeting, footer: cfg.messages.footer };
+    } catch(e) {}
+  }
+
   // Carrega cardápio do localStorage se cliente já editou pelo painel
   const savedMenu = localStorage.getItem("zp_menu_data");
   if (savedMenu) {
